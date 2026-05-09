@@ -1,0 +1,21 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build folders
+x64/
+x86/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+
+# Compiled binaries
+*.exe
+*.obj
+*.pdb
+*.ilk
+
+# Logs
+*.log
