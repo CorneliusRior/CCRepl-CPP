@@ -29,6 +29,7 @@ namespace CCRepl {
 	//CommandBuilder& CommandBuilder::Options(std::vector<std::string> options) { _cmd.Options = options; return *this; }
 	CommandBuilder& CommandBuilder::Mode(int mode) { _cmd.Mode = mode; return *this; }
 	CommandBuilder& CommandBuilder::Desc(std::string desc) { _cmd.Desc = desc; return *this; }
+	CommandBuilder& CommandBuilder::LongDesc(std::string longDesc) { _cmd.LongDesc = longDesc; return *this; }
 	CommandBuilder& CommandBuilder::Group(std::string group) { _cmd.Group = group; return *this; }
 	CommandBuilder& CommandBuilder::Examples(std::vector<std::string> examples) { _cmd.Examples = examples; return *this; }
 

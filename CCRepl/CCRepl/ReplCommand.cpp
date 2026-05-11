@@ -18,13 +18,14 @@ namespace CCRepl {
 
 	std::string ReplCommand::PrintFull() const {
 		std::ostringstream oss;
-		oss << Address;
+		oss << '*' << Address;
 		if (Group) oss << " (" << *Group << ")";
-		oss << "\n";
-		if (!Aliases.empty()) oss << str::PresentList(Aliases, "Aliases: ") << "\n";
-		if (Usage) oss << "Usage: " << *Usage << "\n";
-		if (Desc) oss << "Description: " << *Desc << "\n";
+		oss << '\n';
+		if (!Aliases.empty()) oss << str::PresentList(Aliases, "Aliases: ") << '\n';
+		if (Usage) oss << "Usage: " << *Usage << '\n';
+		if (Desc) oss << "Description: " << *Desc << '\n';
 		if (!Examples.empty()) oss << str::PresentList(Examples, "Examples:", "\n    ", "\n    ", "\n");
+		if (LongDesc) oss << *LongDesc << '\n';
 		if (Children.size() > 0) {
 			if (Children.size() == 1) oss << "1 child: [ " << Children[0]->Address << " ]";
 			else oss << Children.size() << str::PresentList(GetChildAddresses(), " children: ");

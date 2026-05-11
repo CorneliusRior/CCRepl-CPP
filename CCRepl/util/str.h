@@ -39,6 +39,9 @@ namespace str {
     std::string PresentList(const std::vector<std::string>& vec, std::string title = "", std::string sep = ", ", std::string start = "[ ", std::string end = " ]");
     std::string ToMultiLine(const std::string& text);
 
+    bool Equals(const std::string& text1, std::string& text2, bool caseSensitive = false);
+    bool StartsWith(const std::string& standard, const std::string& text, bool caseSensitive = false);
+
     std::size_t MaxLength(const std::vector<std::string>& vec);
     bool InVector(const std::string& text, const std::vector<std::string>& vec, bool caseSensitive = false);
     std::vector<std::string> SplitBy(const std::string& text, char c = ' ');

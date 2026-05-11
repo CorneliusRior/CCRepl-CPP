@@ -124,10 +124,10 @@ namespace str {
 		return ToLower(Trim(text));
 	}
 
-	// Replaces every instance of ' ', ',', '/', '-' or combinations of those with '.' and trims, used for creating command statements.
+	// Replaces every instance of ' ', ',', '/', or combinations of those with '.' and trims, used for creating command statements.
 	std::string DotSeparated(const std::string& text, bool removeDuplicates) {
 		std::string r = Trim(text);
-		std::unordered_set<char> dots = { '.', ' ', ',', '/', '-' };
+		std::unordered_set<char> dots = { '.', ' ', ',', '/' };
 
 		// Replace everything with dots:
 		std::replace_if(
@@ -215,6 +215,23 @@ namespace str {
 			oss << text[i];
 		}
 		return oss.str();
+	}
+
+	bool Equals(const std::string& text1, std::string& text2, bool caseSensitive) {
+		if (caseSensitive) return text1 == text2;
+		return ToLower(text1) == ToLower(text2);
+	}
+
+	// Does standard begin with text?
+	bool StartsWith(const std::string& standard, const std::string& text, bool caseSensitive) {
+		if (caseSensitive) return standard.size() >= text.size() && std::equal(text.begin(), text.end(), standard.begin());
+		return standard.size() >= text.size() && 
+			std::equal(
+				text.begin(), text.end(), standard.begin(),
+				[](char a, char b) {
+					return std::tolower((unsigned char)a) == std::tolower((unsigned char)b);
+				}
+			);		
 	}
 
 	// Vector functions:

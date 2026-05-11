@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <ranges>
+#include <set>
 #include "CommandBuilder.h"
 #include "CommandSet.h"
 #include "fmt.h"
@@ -76,25 +77,87 @@ namespace CCRepl {
 			ctx.WriteLine(std::format("No commands or aliases found starting with '{}'.", ik));
 			return;
 		}
-		else {
-			if (inputKey) ctx.WriteLine(std::format("Printing all command names and aliases starting with '{}' ({} total):\n", ik, count));
-			else ctx.WriteLine(std::format("Print all command names and aliases ({} total):\n", count));
-		}
+		
+		// define col here w/ max, right now just '30'.
+		std::size_t col = 30;
+		std::ostringstream oss;
 
+		if (args.HasOptStart("-g")) {
+			std::set<std::optional<std::string>> seen;
+			std::vector<std::optional<std::string>> groups;
+			for (const auto& it : filtered) {
+				std::optional<std::string> group = it.second->Group;
+				if (seen.insert(group).second) groups.push_back(group);
+			}
+
+			// Sort groups:
+			std::sort(groups.begin(), groups.end(),
+				[](const auto& a, const auto& b) {
+					auto rank = [](const auto& s) {
+						if (s && *s == "Base") return 0;
+						if (s) return 1;
+						return 2;
+						};
+					int ra = rank(a);
+					int rb = rank(b);
+					if (ra != rb) return ra < rb;
+					return a < b;
+				});
+
+			// Add each to string:
+			for (std::optional<std::string> g : groups) {
+				// Filter for group:
+				auto gfiltered = ctx.AliasReg | std::views::filter(
+					[&sk, &g](const auto& it) { return it.first.starts_with(sk) && it.second->Group == g;}
+				);
+
+				// Count:
+				std::size_t gcount = 0;
+				std::set<std::string> seenCmd;
+				for (const auto& it : gfiltered) {
+					std::string add = it.second->Address;
+					if (seenCmd.insert(add).second) gcount++;
+				}
+
+				// Print banner:
+				oss << " * " 
+					<< g.value_or("Ungrouped") 
+					<< " (" 
+					<< std::ranges::distance(gfiltered) 
+					<< " total aliases for " 
+					<< gcount
+					<< " commands) :\n\n";
+
+				// Print each line:
+				for (const auto& it : gfiltered) 
+					oss << str::TruncatePadRight(it.first, col) + str::Truncate(it.second->Address, 150) << '\n';
+			}
+		}
+		else for (const auto& it : filtered)
+				oss << str::TruncatePadRight(it.first, 30) + str::Truncate(it.second->Address, 150) << '\n';
+		
+		// Print banner:
+		if (inputKey) ctx.WriteLine(std::format("Printing all command names and aliases starting with '{}' ({} total):\n", ik, count));
+		else ctx.WriteLine(std::format("Print all command names and aliases ({} total):\n", count));
+		
 		// Print:
-		for (const auto& it : filtered) ctx.WriteLine(str::TruncatePadRight(it.first, 30) + str::Truncate(it.second->Address, 150));
+		ctx.WriteLine(oss.str());
+
+		// Count unique commands:
+		std::size_t uniqueCmd = 0;
+		std::set<std::string> seenCmd;
+		for (const auto& it : filtered) {
+			std::string add = it.second->Address;
+			if (seenCmd.insert(add).second) uniqueCmd++;
+		}
 
 		// End box:
 		ctx.WriteLine();
-		ctx.WriteLine(
-			fmt::TxtBoxCenter(
-				std::format("{} total aliases{}.",
-					count,
-					(inputKey.has_value() ? std::format(" starting with '{}' found", ik) : "")
-				),
-				inputKey.has_value() ? ik : "All"
-			)
-		);
+		std::ostringstream report;
+		report << count << " total aliases ";
+		if (inputKey.has_value()) report << "starting with '" << ik << "' found ";
+		report << "for " << uniqueCmd << " commands.";
+		ctx.WriteLine(fmt::TxtBoxCenter(report.str(), inputKey.has_value() ? ik : "All"));
 	}
 
 	static void HelpTree(ReplContext& ctx, CommandArgs& args) {
@@ -129,13 +192,32 @@ namespace CCRepl {
 			.Args(StrArg("Search Key", ArgMode::Optional))
 			.Options("-oneline", "-ol", "-full", "-fl", "-usage", "-u")
 			.Desc("Lists all commands and descriptions, or shows full help for all commands with Search Key is specified.\nOptions '-full' and '-fl' will show full help statement regardless.\nOptions '-oneline' and '-ol' will list descriptions regardless.\nOptions '-usage' and '-u' will show usage statement instead of descriptions.")
+			.LongDesc(
+				// Doesn't actually apply yet, will need to make it so:
+
+				/*
+				Next: Please apply the below, copying the format we use in C#, of using a "PrintLong" function.
+				Doesn't have to be an actual function, can just be a Lambda or something.				
+				*/
+				R"(Lists all commands and descriptions, or full help for all commands starting with Search Key. Behaviour altered with options:
+ * '-a' ('aliases'): Prints list of all aliases for that command node (to see full list of all possible combinations, see Help.Alias).
+ * '-d' ('description'): Prints full description without truncation.
+ * '-e' ('example'): Prints example usages.
+ * '-f' ('full'): Prints full info regardless of search key presence.
+ * '-g' ('group'): Prints by group (by default only done with no search term. Use '-o' to ungroup that)
+ * '-l' ('longdescription'): Prints full long description without truncation.
+ * '-o' ('oneline', also '-ol'): Prints description regardless of search key presence.
+ * '-u' ('usage'): Prints usage statements instead of description.
+Checks for options with 'startswith'. Only the first valid options is used (except for '-g').)"
+			)
 			.Children(
 
 				Cmd("Aliases")
 				.Aliases( "a", "als", "alias" )
 				.Exec(HelpAlias)
 				.Args(StrArg("Search Key", ArgMode::Optional))
-				.Desc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified."),
+				.Options("-g")
+				.Desc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified. Behaviour altered with option:\n * '-g' ('group'): Prints by group."),
 
 				Cmd("Tree")
 				.Aliases( "t", "map", "rootmap" )

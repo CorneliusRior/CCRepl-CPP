@@ -17,6 +17,7 @@ namespace CCRepl {
 		std::vector<std::unique_ptr<IArgSpec>> ArgSpecs;
 		std::optional<int> Mode;
 		std::optional<std::string> Desc;
+		std::optional<std::string> LongDesc;
 		std::optional<std::string> Usage;
 		std::optional<std::string> Group;
 		std::vector<std::string> Options;

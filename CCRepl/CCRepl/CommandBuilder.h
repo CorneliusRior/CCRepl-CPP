@@ -54,6 +54,7 @@ namespace CCRepl {
 		//CommandBuilder& Options(std::vector<std::string> options);
 		CommandBuilder& Mode(int mode);
 		CommandBuilder& Desc(std::string desc);
+		CommandBuilder& LongDesc(std::string longDesc);
 		CommandBuilder& Group(std::string group);
 		CommandBuilder& Examples(std::vector<std::string> examples);
 

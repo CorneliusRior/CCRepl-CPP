@@ -12,7 +12,7 @@ namespace CCRepl {
 		std::size_t cmdLen = input.find('(');
 		if (cmdLen == std::string::npos) cmdLen = input.size();
 		std::string cmdStr = str::Trim(input.substr(0, cmdLen));
-		std::unordered_set<char> dots = { '.', ' ', ',', '/', '-' };	// Replaced by '.' 
+		std::unordered_set<char> dots = { '.', ' ', ',', '/' };	// Replaced by '.' 
 		std::replace_if(cmdStr.begin(), cmdStr.end(), [&](char c) { return dots.contains(c); }, '.');
 		cmdStr = str::TrimCharAscii(cmdStr, '.');
 		cmdStr.erase(std::unique(

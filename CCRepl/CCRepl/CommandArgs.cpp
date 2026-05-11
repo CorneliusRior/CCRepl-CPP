@@ -68,4 +68,8 @@ namespace CCRepl {
 	}
 
 	bool CommandArgs::HasOption(const std::string& opt) { return str::InVector(opt, Options); }
+	bool CommandArgs::HasOptStart(const std::string& opt) {
+		for (const std::string& o : Options) if (str::StartsWith(o, opt)) return true;
+		return false;
+	}
 }
