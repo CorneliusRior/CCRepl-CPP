@@ -7,6 +7,17 @@ namespace CCRepl {
 	class CommandArgs;
 	class ReplContext;
 
+	enum class HelpAttribute {
+		Aliases,
+		Description,
+		Examples,
+		Full,
+		LongDescription,
+		Usage
+	};
+
+	std::string ToString(HelpAttribute help);
+
 	class ReplCommand {
 	public:
 
@@ -39,6 +50,7 @@ namespace CCRepl {
 		// Output/Print:
 		std::string PrintRef() const;
 		std::string PrintFull() const;
+		std::string PrintIndex(HelpAttribute help, std::size_t col, std::size_t total, bool oneline = true) const;
 		std::vector<std::string> GetChildAddresses() const;
 		std::string PrintTree(std::string namePrefix, std::string listPrefix);
 	};

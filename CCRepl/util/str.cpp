@@ -161,6 +161,7 @@ namespace str {
 	}
 
 	std::string TruncatePadCenter(const std::string& text, std::size_t w, const std::string& truncateString) {
+		p(STR_FUNC_LOG(text, w, truncateString));
 		std::string r = Truncate(text, w, truncateString);
 		std::size_t gap = w - StrLength(r);
 		return Repeat(" ", gap / 2) + r + Repeat(" ", gap % 2 == 1 ? (gap / 2) + 1 : gap / 2);
@@ -232,6 +233,21 @@ namespace str {
 					return std::tolower((unsigned char)a) == std::tolower((unsigned char)b);
 				}
 			);		
+	}	
+
+	std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t total, bool oneline) {
+		if (col >= total) throw std::runtime_error("str::ToIndex(): col exceeds total.");
+		std::ostringstream oss;
+		
+		if (oneline) return TruncatePadRight(key, col) + Truncate(value, total - col);
+		else {
+			std::vector<std::string> lv = ToIndexLineV(key, value, col, total, false);
+			for (std::size_t i = 0; i < lv.size(); i++) {
+				oss << lv[i];
+				if (i + 1 != lv.size()) oss << '\n';
+			}
+		}
+		return oss.str();
 	}
 
 	// Vector functions:
@@ -295,7 +311,8 @@ namespace str {
 		return Indent(SplitBy(text, '\n'), n);
 	}
 
-	std::vector<std::string> Wrap(const std::string& text, std::size_t w) {
+	// Pad: add empty space to make every line equal to w, useful for AppendStringVectors().
+	std::vector<std::string> Wrap(const std::string& text, std::size_t w, bool pad) {
 		std::vector<std::string> r;
 		if (w < 1) return r;
 		if (w == 1) {
@@ -309,7 +326,7 @@ namespace str {
 			oss.str("");
 			oss.clear();
 			};
-		auto FlushLine = [&oss, &r, &Reset]() {
+		auto FlushLine = [&oss, &r, &Reset, &w]() {
 			std::string l = oss.str();
 			if (!l.empty()) r.push_back(l);
 			Reset();
@@ -360,7 +377,27 @@ namespace str {
 			FlushLine();
 			//if (&p != &paras.back()) r.push_back("");
 		}
+		if (pad) {
+			std::vector<std::string> padr;
+			for (std::string l : r) padr.push_back(TruncatePadRight(l, w));
+			return padr;
+		}
 		return r;
+	}
+
+	// One index entry, returned as vector.
+	std::vector<std::string> ToIndexLineV(const std::string& index, const std::string& value, std::size_t col, std::size_t total, bool oneline) {
+		if (col >= total) throw std::runtime_error("str::ToIndex(): col exceeds total.");		
+
+		if (oneline) {
+			std::vector<std::string> r;
+			r.push_back(TruncatePadRight(index, col) + Truncate(value, total - col));
+			return r;
+		}
+
+		std::vector<std::string> k = Wrap(index, col, true);
+		std::vector<std::string> v = Wrap(value, total - col);
+		return AppendStringVectors(k, v);
 	}
 
 	std::string ToString(double value, std::size_t prec) {

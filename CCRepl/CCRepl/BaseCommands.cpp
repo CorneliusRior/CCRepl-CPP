@@ -23,42 +23,99 @@ namespace CCRepl {
 			[&sk](const auto& it) { return it.first.starts_with(sk); }
 		);
 
-		// Print announcement:
 		std::size_t count = std::ranges::distance(filtered);
 		if (count == 0) {
-			ctx.WriteLine(std::format("No commands starting with '{}'. Help command only uses canonical command names, to find canonical name from an alias, try 'Help.Aliases(<alias>)'.", ik));
+			ctx.WriteLine(std::format("No commands found starting with '{}'. Try 'Help.Alias' for possible aliases.", ik));
 			return;
 		}
+
+		// Determine mode:
+		std::optional<bool> oneline;
+		bool olDefault;
+		int olOpt = args.FirstOptionStart("-o", "-ol", "-m");
+		switch (olOpt) {
+		case 0:
+		case 1: oneline = true;				break;
+		case 2: oneline = false;			break;
+		default: oneline = std::nullopt;	break;
+		}
+
+		HelpAttribute att;
+		int attMode = args.FirstOptionStart("-a", "-d", "-e", "-f", "-l", "-u");
+		switch (attMode) {
+		case 0:		att = HelpAttribute::Aliases;			 olDefault = true;	break;
+		case 1:		att = HelpAttribute::Description;		 olDefault = true;	break;
+		case 2:		att = HelpAttribute::Examples;			 olDefault = false;	break;
+		case 3:		att = HelpAttribute::Full;				 olDefault = false;	break;
+		case 4:		att = HelpAttribute::LongDescription;	 olDefault = false;	break;
+		case 5:		att = HelpAttribute::Usage;				 olDefault = true;	break;
+		default:	
+			att = inputKey.has_value() ? HelpAttribute::Full : HelpAttribute::Description;		 
+			olDefault = true; 
+			break;
+		}
+
+		// Define col here w/ max, right now just '30';
+		std::size_t col = 0;
+		for (const auto& it : filtered) if (it.first.size() > col) col = it.first.size();
+		col += 5;
+		std::size_t total = 180 - col;
+		std::ostringstream oss;
+		bool group = args.HasOptStart("-g");
+
+		// Write it out:
+		if (group) {
+			std::set<std::optional<std::string>> seen;
+			std::vector<std::optional<std::string>> groups;
+			for (const auto& it : filtered) {
+				std::optional<std::string> group = it.second.Group;
+				if (seen.insert(group).second) groups.push_back(group);
+			}
+
+			// Sort groups:
+			std::sort(groups.begin(), groups.end(),
+				[](const auto& a, const auto& b) {
+					auto rank = [](const auto& s) {
+						if (s && *s == "Base") return 0;
+						if (s) return 1;
+						return 2;
+						};
+					int ra = rank(a);
+					int rb = rank(b);
+					if (ra != rb) return ra < rb;
+					return a < b;
+				});
+
+			for (std::optional<std::string> g : groups) {
+				auto gfiltered = ctx.CommandReg | std::views::filter(
+					[&sk, &g](const auto& it) { return it.first.starts_with(sk) && it.second.Group == g;}
+				);
+
+				// Print banner:
+				oss << "\n * "
+					<< g.value_or("Ungrouped")
+					<< " ("
+					<< std::ranges::distance(gfiltered)
+					<< " total):\n";
+
+				// Print each line:
+				for (const auto& it : gfiltered)
+					oss << it.second.PrintIndex(att, col, total, oneline.value_or(olDefault)) << '\n';
+			}
+		}
 		else {
-			if (inputKey) ctx.WriteLine(std::format("Printing all commands starting with '{}' ({} total):\n", ik, count));
-			else ctx.WriteLine(std::format("Printing all commands ({} total):\n", count));
+			for (const auto& it : filtered) 
+				oss << it.second.PrintIndex(att, col, total, oneline.value_or(olDefault)) << '\n';
 		}
+		
 
-		// Some options contradict, e.g. full & oneline, so to avoid confusion, we just pay attention to first.
-		if (args.Options.size() > 0) {
-			std::string opt1 = str::TrimToLower(args.Options[0]);
-			
-			if (str::InVector(opt1, { "-oneline", "-ol" })) {
-				for (const auto& it : filtered) ctx.WriteLine(str::TruncatePadRight(it.second.Address, 30) + str::Truncate(it.second.Desc.value_or("-"), 150));
-				return;
-			}
+		// Print announcement:
+		std::string beginStmt = inputKey.has_value() ? std::format("beginning with '{}'", ik) : "";
+		if (att == HelpAttribute::Full) ctx.WriteLine(std::format("Printing full information for all commands{} ({} total):\n", beginStmt, count));
+		else ctx.WriteLine(std::format("Printing addresses and {} for all commands{} ({} total):\n", ToString(att), beginStmt, count));
 
-			if (str::InVector(opt1, { "-full", "-fl" })) {
-				for (const auto& it : filtered) ctx.WriteLine(it.second.PrintFull() + '\n');
-				return;
-			}
-
-			if (str::InVector(opt1, { "-usage", "-u" })) {
-				for (const auto& it : filtered) ctx.WriteLine(str::TruncatePadRight(it.second.Address, 30) + str::Truncate(it.second.Usage.value_or("-"), 150));
-				return;
-			}
-
-		}
-
-		// No options: Print full if sk specified, print descriptions otherwise:
-		if (inputKey) for (const auto& it : filtered) ctx.WriteLine(it.second.PrintFull());
-		else for (const auto& it : filtered) ctx.WriteLine(str::TruncatePadRight(it.second.Address, 30) + str::Truncate(it.second.Desc.value_or("-"), 150));		
-
+		ctx.WriteLine(oss.str());
+		// Test when you get back.
 	}
 
 	static void HelpAlias(ReplContext& ctx, CommandArgs& args) {
@@ -78,8 +135,13 @@ namespace CCRepl {
 			return;
 		}
 		
-		// define col here w/ max, right now just '30'.
-		std::size_t col = 30;
+		// Define col.
+		std::size_t col = 0;
+		for (const auto& it : filtered) if (it.first.size() > col) col = it.first.size();
+		col += 5;
+		if (col > 90) col = 90;
+		std::size_t col2 = 180 - col;
+
 		std::ostringstream oss;
 
 		if (args.HasOptStart("-g")) {
@@ -120,21 +182,21 @@ namespace CCRepl {
 				}
 
 				// Print banner:
-				oss << " * " 
+				oss << "\n * " 
 					<< g.value_or("Ungrouped") 
 					<< " (" 
 					<< std::ranges::distance(gfiltered) 
 					<< " total aliases for " 
 					<< gcount
-					<< " commands) :\n\n";
+					<< " commands) :\n";
 
 				// Print each line:
 				for (const auto& it : gfiltered) 
-					oss << str::TruncatePadRight(it.first, col) + str::Truncate(it.second->Address, 150) << '\n';
+					oss << str::TruncatePadRight(it.first, col) + str::Truncate(it.second->Address, col2) << '\n';
 			}
 		}
 		else for (const auto& it : filtered)
-				oss << str::TruncatePadRight(it.first, 30) + str::Truncate(it.second->Address, 150) << '\n';
+				oss << str::TruncatePadRight(it.first, col) + str::Truncate(it.second->Address, col2) << '\n';
 		
 		// Print banner:
 		if (inputKey) ctx.WriteLine(std::format("Printing all command names and aliases starting with '{}' ({} total):\n", ik, count));
@@ -190,15 +252,9 @@ namespace CCRepl {
 			.Aliases("h", "?")
 			.Exec(Help)
 			.Args(StrArg("Search Key", ArgMode::Optional))
-			.Options("-oneline", "-ol", "-full", "-fl", "-usage", "-u")
-			.Desc("Lists all commands and descriptions, or shows full help for all commands with Search Key is specified.\nOptions '-full' and '-fl' will show full help statement regardless.\nOptions '-oneline' and '-ol' will list descriptions regardless.\nOptions '-usage' and '-u' will show usage statement instead of descriptions.")
+			.Options("-a", "-d", "-e", "-f", "-g", "-l", "-m", "-o", "-u")
+			.Desc("Lists all commands and descriptions, or shows full help for all commands with Search Key is specified.")
 			.LongDesc(
-				// Doesn't actually apply yet, will need to make it so:
-
-				/*
-				Next: Please apply the below, copying the format we use in C#, of using a "PrintLong" function.
-				Doesn't have to be an actual function, can just be a Lambda or something.				
-				*/
 				R"(Lists all commands and descriptions, or full help for all commands starting with Search Key. Behaviour altered with options:
  * '-a' ('aliases'): Prints list of all aliases for that command node (to see full list of all possible combinations, see Help.Alias).
  * '-d' ('description'): Prints full description without truncation.
@@ -206,10 +262,13 @@ namespace CCRepl {
  * '-f' ('full'): Prints full info regardless of search key presence.
  * '-g' ('group'): Prints by group (by default only done with no search term. Use '-o' to ungroup that)
  * '-l' ('longdescription'): Prints full long description without truncation.
- * '-o' ('oneline', also '-ol'): Prints description regardless of search key presence.
+ * '-m' ('multiline'): Prints in multiple liens regardless of parameter (description by default, use '-f' to show full info).
+ * '-o' ('oneline', also '-ol'): Prints only one line regardless of search key presence of parameter.
  * '-u' ('usage'): Prints usage statements instead of description.
 Checks for options with 'startswith'. Only the first valid options is used (except for '-g').)"
 			)
+			.Examples({ "Help", "?", "Help(Diary.Add)", "Help(Diary) -usage", "Help() -d -m" })
+			.Group("Base")
 			.Children(
 
 				Cmd("Aliases")
@@ -217,13 +276,18 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Exec(HelpAlias)
 				.Args(StrArg("Search Key", ArgMode::Optional))
 				.Options("-g")
-				.Desc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified. Behaviour altered with option:\n * '-g' ('group'): Prints by group."),
+				.Desc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
+				.LongDesc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.Behaviour altered with option : \n * '-g' ('group') : Prints by group.")
+				.Examples({"Help.Aliases", "Help.als", "Help.Aliases(Journal.Add)", "Help.Aliases() -g"})
+				.Group("Base"),
 
 				Cmd("Tree")
 				.Aliases( "t", "map", "rootmap" )
 				.Exec(HelpTree)
 				.Args(StrArg("Command Name", ArgMode::Optional))
 				.Desc("Prints command tree, or command tree descended from a command if specified. Visualisation of command map/hierarchy.")
+				.Examples({"Help.Tree", "Help.map()", "Help.Tree(Diary.Add)"})
+				.Group("Base")
 
 			),
 
@@ -232,7 +296,9 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 			.Exec(Clear)
 			.Args(StrArg("Clear Message", ArgMode::Optional))
 			.Options("-b")
-			.Desc("Clears the screen, replacing it with optional message, or 'Cleared screen' by default.\nOption '-b' will make it blank, showing no message."),
+			.Desc("Clears the screen, replacing it with optional message, or 'Cleared screen' by default.\nOption '-b' will make it blank, showing no message.")
+			.Examples({"Clear", "clr", "Clear() -b"})
+			.Group("Base"),
 
 			Cmd("Echo")
 			.Aliases( "ech", "print", "write" )
@@ -241,12 +307,16 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				StrArg("Message", ArgMode::RequiredPrompt),
 				SztArg("n", ArgMode::Optional, 1)
 			)
-			.Desc("Echos specified text n times (default = 1)."),
+			.Desc("Echos specified text n times (default = 1).")
+			.Examples({ "Echo(Hello World!)", "Echo", "print(Hello World!)", "Echo({Hello World!\\n}, 1000)"})
+			.Group("Base"),
 
 			Cmd("Exit")
 			.Aliases("ext", "quit", "close", "closeapp")
 			.Exec(Exit)
 			.Desc("Closes the program.")
+			.Examples({ "Exit", "ext"})
+			.Group("Base")
 
 		);
 	}

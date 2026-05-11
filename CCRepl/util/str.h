@@ -38,6 +38,7 @@ namespace str {
     std::string PrintList(const std::vector<std::string>& vec);
     std::string PresentList(const std::vector<std::string>& vec, std::string title = "", std::string sep = ", ", std::string start = "[ ", std::string end = " ]");
     std::string ToMultiLine(const std::string& text);
+    std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t total, bool oneline = true);
 
     bool Equals(const std::string& text1, std::string& text2, bool caseSensitive = false);
     bool StartsWith(const std::string& standard, const std::string& text, bool caseSensitive = false);
@@ -48,7 +49,8 @@ namespace str {
     std::vector<std::string> AppendStringVectors(const std::vector<std::string>& v1, const std::vector<std::string>& v2);
     std::vector<std::string> Indent(const std::vector<std::string>& vec, size_t n = 1);
     std::vector<std::string> IndentStr(const std::string& text, size_t n = 1);
-    std::vector<std::string> Wrap(const std::string& text, std::size_t w);
+    std::vector<std::string> Wrap(const std::string& text, std::size_t w, bool pad = false);
+    std::vector<std::string> ToIndexLineV(const std::string& index, const std::string& value, std::size_t col, std::size_t total, bool oneline = true);
 
     std::string ToString(const double value, std::size_t prec = 1);
 

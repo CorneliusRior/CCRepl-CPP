@@ -49,35 +49,35 @@ namespace CCRepl {
 		bool OptStrt(const Ts&... opts) { return (HasOptStart(opts) || ...); }
 
 		/// <summary>
-		/// Given a list of strings, returns the first of those string to appear in the options vector. If none appear, returns "".
+		/// Given a list of strings, returns the position of the first of those string to appear in the options vector. If none appear, returns -1.
 		/// </summary>
 		/// <param name="...opts">Options you are looking for</param>
 		/// <returns></returns>
 		template<typename... Ts>
-		std::string FirstOptionOf(const Ts&... opts) {
+		int FirstOptionOf(const Ts&... opts) {
 			std::vector<std::string> optsVec = { opts... };
 			for (const std::string& o : Options) {
 				auto it = std::find_if(optsVec.begin(), optsVec.end(),
 					[&o](const std::string& s) { return str::Equals(o, s, false); });
-				if (it != optsVec.end()) return *it;
+				if (it != optsVec.end()) return static_cast<int>(std::distance(optsVec.begin(), it));
 			}
-			return "";
+			return -1;
 		}
 
 		/// <summary>
-		/// Given a list of strings, return the first of those strings to have a option in the options vector start with that string. If none appear, returns "".
+		/// Given a list of strings, return the position of the first of those strings to have a option in the options vector start with that string. If none appear, returns -1.
 		/// </summary>
 		/// <param name="...opts">Start of options you are looking for</param>
 		/// <returns></returns>
 		template<typename... Ts>
-		std::string FirstOptionStart(const Ts&... opts) {
+		int FirstOptionStart(const Ts&... opts) {
 			std::vector<std::string> optsVec = { opts... };
 			for (const std::string& o : Options) {
 				auto it = std::find_if(optsVec.begin(), optsVec.end(),
 					[&o](const std::string& s) { return str::StartsWith(o, s, false); });
-				if (it != optsVec.end()) return *it;
+				if (it != optsVec.end()) return static_cast<int>(std::distance(optsVec.begin(), it));
 			}
-			return "";
+			return -1;
 		}
 
 		template<typename T>
