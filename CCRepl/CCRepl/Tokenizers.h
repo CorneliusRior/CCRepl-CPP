@@ -14,6 +14,8 @@ namespace CCRepl {
 		std::string commandHead;
 		std::vector<std::string> args;
 		std::vector<std::string> opts;
+
+		std::string Print() const;
 	};
 
 	CommandTokens TokenizeParen(const std::string& input);

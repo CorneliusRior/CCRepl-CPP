@@ -45,7 +45,7 @@ namespace CCRepl {
 		catch (...) { WriteLine("Unknown error."); }		
 	}
 
-	void ReplContext::Test(const CommandTokens& tokens, bool run) {
+	bool ReplContext::Test(const CommandTokens& tokens, bool run) {
 		bool ok;
 		try {			
 			ReplCommand* cmd = FindCommand(tokens.commandHead);
@@ -64,29 +64,23 @@ namespace CCRepl {
 		catch (...) { WriteLine("Unknown error."); ok = false; }
 
 		if (ok) {
-			WriteLine(std::format("[SUCCESS]: '{}'{}.",
-				tokens.commandHead,
-				(run ? ": Running" : "")
-			));
-			Execute(tokens);
+			WriteLine(std::format("[SUCCESS]: '{}'{}.", tokens.commandHead, (run ? ": Running" : "")));
+			if (run) Execute(tokens);
 		}
-		else {
-			WriteLine(std::format("[FAILURE]: '{}'{}.", 
-				str::PresentList(tokens.args, tokens.commandHead, ", ", "(", ")"),
-				(run ? ": Not running" : "")
-			));
-		}
+		else WriteLine(std::format("[FAILURE]: '{}'{}.", tokens.Print(), (run ? ": Not running" : "")));
+		return ok;
 	}
 
-	void ReplContext::Test(const std::string& input, bool run) {
+	bool ReplContext::Test(const std::string& input, bool run) {
 		try {
 			CommandTokens tk = TokenizeParen(input);
-			Test(tk, run);
+			return Test(tk, run);
 		}
 		catch (ReplUserException ex) { WriteLine(std::format("User error: {}", ex.what())); }
 		catch (ReplException ex) { WriteLine(std::format("Repl Error: {}", ex.what())); }
 		catch (std::runtime_error ex) { WriteLine(std::format("Error: {}", ex.what())); }
 		catch (...) { WriteLine("Unknown error."); }
+		return false;
 	}
 
 	void ReplContext::CloseApp() {

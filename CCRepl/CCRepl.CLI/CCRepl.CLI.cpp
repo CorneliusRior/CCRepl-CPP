@@ -7,7 +7,7 @@ int main()
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
-    std::cout << "CCRepl.CLI. Type 'help' to see commands.\n";
+    std::cout << "CCRepl CLI (C++).\nType 'help' to see commands, type 'exit' to quit.\n";
     CCRepl::BaseCommands base;
 
     CCRepl::ReplContext ctx( &base );
@@ -25,7 +25,7 @@ int main()
         ctx.Write("> ");
         std::string line;
         std::getline(std::cin, line);
-        ctx.Test(line, true);
+        ctx.Execute(line);
     }
     ctx.WriteLine("Closing");
     return 0;

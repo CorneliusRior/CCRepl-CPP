@@ -3,6 +3,10 @@
 
 namespace CCRepl {
 
+	std::string CommandTokens::Print() const {
+		return str::PresentList(args, commandHead, ", ", "(", ")") + str::PresentList(opts, "", " ", " ", "");
+	}
+
 	CommandTokens TokenizeParen(const std::string& input) {
 
 		std::vector<std::string> args;
