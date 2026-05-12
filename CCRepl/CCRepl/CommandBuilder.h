@@ -50,13 +50,12 @@ namespace CCRepl {
 
 		explicit CommandBuilder(std::string name);
 		CommandBuilder& Exec(std::function<void(ReplContext&, CommandArgs&)> exec);
+		CommandBuilder& Test(std::function<bool(ReplContext&, CommandArgs&)> test);
 		CommandBuilder& Args();
-		//CommandBuilder& Options(std::vector<std::string> options);
 		CommandBuilder& Mode(int mode);
 		CommandBuilder& Desc(std::string desc);
 		CommandBuilder& LongDesc(std::string longDesc);
 		CommandBuilder& Group(std::string group);
-		CommandBuilder& Examples(std::vector<std::string> examples);
 
 		template<typename T>
 		void AddArg(CmdArg<T>&& spec) {
@@ -86,6 +85,12 @@ namespace CCRepl {
 		template<typename... Opt>
 		CommandBuilder& Options(Opt&&... options) {
 			(_cmd.Options.push_back(std::forward<Opt>(options)), ...);
+			return *this;
+		}
+
+		template<typename... Exp>
+		CommandBuilder& Examples(Exp&&... examples) {
+			(_cmd.Examples.push_back(std::forward<Exp>(examples)), ...);
 			return *this;
 		}
 

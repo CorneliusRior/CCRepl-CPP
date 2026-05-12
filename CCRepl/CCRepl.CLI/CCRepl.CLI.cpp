@@ -25,7 +25,7 @@ int main()
         ctx.Write("> ");
         std::string line;
         std::getline(std::cin, line);
-        ctx.Execute(line);
+        ctx.Test(line, true);
     }
     ctx.WriteLine("Closing");
     return 0;

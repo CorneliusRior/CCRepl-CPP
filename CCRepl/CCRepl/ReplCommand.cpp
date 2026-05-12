@@ -17,6 +17,7 @@ namespace CCRepl {
 
 
 	bool ReplCommand::CanExecute() const { return static_cast<bool>(Execute); }
+	bool ReplCommand::CanTest() const { return static_cast<bool>(Test); }
 
 	// Prints Address ane number of children.
 	std::string ReplCommand::PrintRef() const {

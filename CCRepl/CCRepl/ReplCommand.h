@@ -25,6 +25,7 @@ namespace CCRepl {
 		std::string Address;
 		std::vector<std::string> Aliases;
 		std::function<void(ReplContext&, CommandArgs&)> Execute;
+		std::function<bool(ReplContext&, CommandArgs&)> Test;
 		std::vector<std::unique_ptr<IArgSpec>> ArgSpecs;
 		std::optional<int> Mode;
 		std::optional<std::string> Desc;
@@ -46,6 +47,7 @@ namespace CCRepl {
 		ReplCommand& operator=(ReplCommand&&) noexcept = default;
 
 		bool CanExecute() const;
+		bool CanTest() const;
 
 		// Output/Print:
 		std::string PrintRef() const;

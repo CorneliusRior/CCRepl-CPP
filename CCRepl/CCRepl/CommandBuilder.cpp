@@ -25,13 +25,12 @@ namespace CCRepl {
 
 	CommandBuilder::CommandBuilder(std::string name) { _cmd.Name = std::move(name); }
 
-	CommandBuilder& CommandBuilder::Exec(std::function<void(ReplContext&, CommandArgs&)> newExec) { _cmd.Execute = newExec; return *this; }
-	//CommandBuilder& CommandBuilder::Options(std::vector<std::string> options) { _cmd.Options = options; return *this; }
+	CommandBuilder& CommandBuilder::Exec(std::function<void(ReplContext&, CommandArgs&)> exec) { _cmd.Execute = exec; return *this; }
+	CommandBuilder& CommandBuilder::Test(std::function<bool(ReplContext&, CommandArgs&)> test) { _cmd.Test = test; return *this; }
 	CommandBuilder& CommandBuilder::Mode(int mode) { _cmd.Mode = mode; return *this; }
 	CommandBuilder& CommandBuilder::Desc(std::string desc) { _cmd.Desc = desc; return *this; }
 	CommandBuilder& CommandBuilder::LongDesc(std::string longDesc) { _cmd.LongDesc = longDesc; return *this; }
-	CommandBuilder& CommandBuilder::Group(std::string group) { _cmd.Group = group; return *this; }
-	CommandBuilder& CommandBuilder::Examples(std::vector<std::string> examples) { _cmd.Examples = examples; return *this; }
+	CommandBuilder& CommandBuilder::Group(std::string group) { _cmd.Group = group; return *this; }	
 
 	ReplCommand CommandBuilder::Build() { return std::move(_cmd); }
 

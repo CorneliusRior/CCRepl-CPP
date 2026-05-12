@@ -119,6 +119,22 @@ namespace CCRepl {
 		// Test when you get back.
 	}
 
+	// Silly test, frankly you can disregard this one:
+	static bool HelpTest(ReplContext& ctx, CommandArgs& args) {
+		std::optional<std::string> inputKey = args.Get<std::string>(0);
+		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
+		std::string sk = str::ToLower(ik);								// Lower case, for searching
+		auto filtered = ctx.CommandReg | std::views::filter(
+			[&sk](const auto& it) { return it.first.starts_with(sk); }
+		);
+		std::size_t count = std::ranges::distance(filtered);
+		if (count == 0) {
+			ctx.WriteLine(std::format("No commands found starting with '{}'. Try 'Help.Alias' for possible aliases.", ik));
+			return false;
+		}
+		else return true;
+	}
+
 	static void HelpAlias(ReplContext& ctx, CommandArgs& args) {
 
 		// Create filtered map (shows all if string is empty):
@@ -249,6 +265,11 @@ namespace CCRepl {
 		ctx.WriteLine(oss.str());
 	}
 
+	static void TestInput(ReplContext& ctx, CommandArgs& args) {
+		std::string input = args.GetRequired<std::string>(0);
+		ctx.Test(input, args.HasOptStart("-r"));
+	}
+
 	static void Clear(ReplContext& ctx, CommandArgs& args) {
 		if (args.Opt("-b")) ctx.Clear();
 		else ctx.Clear(args.GetOr<std::string>(0, "Cleared Screen."));
@@ -288,7 +309,7 @@ namespace CCRepl {
  * '-u' ('usage'): Prints usage statements instead of description.
 Checks for options with 'startswith'. Only the first valid options is used (except for '-g').)"
 			)
-			.Examples({ "Help", "?", "Help(Diary.Add)", "Help(Diary) -usage", "Help() -d -m" })
+			.Examples( "Help", "?", "Help(Diary.Add)", "Help(Diary) -usage", "Help() -d -m" )
 			.Group("Base")
 			.Children(
 
@@ -299,7 +320,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Options("-g")
 				.Desc("Lists all aliases and corresponding canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
 				.LongDesc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.Behaviour altered with option : \n * '-g' ('group') : Prints by group.")
-				.Examples({"Help.Aliases", "Help.als", "Help.Aliases(Journal.Add)", "Help.Aliases() -g"})
+				.Examples( "Help.Aliases", "Help.als", "Help.Aliases(Journal.Add)", "Help.Aliases() -g" )
 				.Group("Base"),
 
 				Cmd("Tree")
@@ -307,7 +328,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Exec(HelpTree)
 				.Args(StrArg("Command Name", ArgMode::Optional))
 				.Desc("Prints command tree, or command tree descended from a command if specified. Visualisation of command map/hierarchy.")
-				.Examples({"Help.Tree", "Help.map()", "Help.Tree(Diary.Add)"})
+				.Examples( "Help.Tree", "Help.map()", "Help.Tree(Diary.Add)" )
 				.Group("Base")
 
 			),
@@ -317,7 +338,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 			.Exec(CommandList)
 			.Args(StrArg("Search Key", ArgMode::Optional, ""))
 			.Desc("Lists all commands, or all commands beginning with seach key if specified.")			
-			.Examples({"CommandList", "cmd", "CommandList(Diary)"})
+			.Examples( "CommandList", "cmd", "CommandList(Diary)" )
 			.Group("Base")
 			.Children(
 
@@ -328,10 +349,20 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Options("-g")
 				.Desc("Lists all aliases and corresponding canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
 				.LongDesc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.Behaviour altered with option : \n * '-g' ('group') : Prints by group.")
-				.Examples({ "CommandList.Aliases", "CommandList.als", "CommandList.Aliases(Journal.Add)", "CommandList.Aliases() -g" })
+				.Examples( "CommandList.Aliases", "CommandList.als", "CommandList.Aliases(Journal.Add)", "CommandList.Aliases() -g" )
 				.Group("Base")
 
 			),
+
+			Cmd("TestInput")
+			.Aliases("testcommand", "tstinp")
+			.Exec(TestInput)
+			.Args(StrArg("Command Input", ArgMode::RequiredPrompt))
+			.Options("-r")
+			.Desc("Runs the TestAsync method on specified command with specified arguments. Prompts if no input is given.")
+			.LongDesc("Runs the TestAsync method on specified command with specified arguments. Prompts if no input is given. Behaviour altered by options:\n * '-r' ('run'): Runs the command on success.")
+			.Examples("Test({Diary.Add(This is a test entry) -f})")
+			.Group("Base"),
 
 			Cmd("Clear")
 			.Aliases( "clr", "clearscreen" )
@@ -339,7 +370,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 			.Args(StrArg("Clear Message", ArgMode::Optional))
 			.Options("-b")
 			.Desc("Clears the screen, replacing it with optional message, or 'Cleared screen' by default.\nOption '-b' will make it blank, showing no message.")
-			.Examples({"Clear", "clr", "Clear() -b"})
+			.Examples( "Clear", "clr", "Clear() -b" )
 			.Group("Base"),
 
 			Cmd("Echo")
@@ -350,14 +381,14 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				SztArg("n", ArgMode::Optional, 1)
 			)
 			.Desc("Echos specified text n times (default = 1).")
-			.Examples({ "Echo(Hello World!)", "Echo", "print(Hello World!)", "Echo({Hello World!\\n}, 1000)"})
+			.Examples( "Echo(Hello World!)", "Echo", "print(Hello World!)", "Echo({Hello World!\\n}, 1000)" )
 			.Group("Base"),
 
 			Cmd("Exit")
 			.Aliases("ext", "quit", "close", "closeapp")
 			.Exec(Exit)
 			.Desc("Closes the program.")
-			.Examples({ "Exit", "ext"})
+			.Examples( "Exit", "ext" )
 			.Group("Base")
 
 		);

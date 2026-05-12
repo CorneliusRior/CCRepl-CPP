@@ -26,7 +26,10 @@ namespace CCRepl {
 
 		// IO:
 		ReplCommand* FindCommand(const std::string& input);
+		void Execute(const CommandTokens& tokens);
 		void Execute(const std::string& input);
+		void Test(const CommandTokens& tokens, bool run = false);
+		void Test(const std::string& input, bool run = false);
 		void CloseApp();
 		void Clear(const std::string& text = "") const;
 		void WriteLine(const std::string& text = "") const;
