@@ -23,7 +23,7 @@ namespace CCRepl {
 		return std::format("{} ({} {})", Address, Children.size(), Children.size() == 1 ? "child" : "children");
 	}
 
-	std::string ReplCommand::PrintIndex(HelpAttribute help, std::size_t col, std::size_t total, bool oneline) const {
+	std::string ReplCommand::PrintIndexLine(HelpAttribute help, std::size_t col, std::size_t total, bool oneline) const {
 		switch (help) {
 		case HelpAttribute::Aliases:
 			return str::ToIndexLine(Address, (Aliases.size() == 0 ? "-" : str::PresentList(Aliases)), col, total, oneline);

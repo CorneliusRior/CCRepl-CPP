@@ -50,10 +50,12 @@ namespace CCRepl {
 		case 4:		att = HelpAttribute::LongDescription;	 olDefault = false;	break;
 		case 5:		att = HelpAttribute::Usage;				 olDefault = true;	break;
 		default:	
-			att = inputKey.has_value() ? HelpAttribute::Full : HelpAttribute::Description;		 
+			att = inputKey.has_value() ? HelpAttribute::Full : HelpAttribute::Description;
 			olDefault = true; 
 			break;
 		}
+
+		bool group = args.HasOptStart("-g");
 
 		// Define col here w/ max, right now just '30';
 		std::size_t col = 0;
@@ -61,7 +63,6 @@ namespace CCRepl {
 		col += 5;
 		std::size_t total = 180 - col;
 		std::ostringstream oss;
-		bool group = args.HasOptStart("-g");
 
 		// Write it out:
 		if (group) {
@@ -100,12 +101,12 @@ namespace CCRepl {
 
 				// Print each line:
 				for (const auto& it : gfiltered)
-					oss << it.second.PrintIndex(att, col, total, oneline.value_or(olDefault)) << '\n';
+					oss << it.second.PrintIndexLine(att, col, total, oneline.value_or(olDefault)) << '\n';
 			}
 		}
 		else {
 			for (const auto& it : filtered) 
-				oss << it.second.PrintIndex(att, col, total, oneline.value_or(olDefault)) << '\n';
+				oss << it.second.PrintIndexLine(att, col, total, oneline.value_or(olDefault)) << '\n';
 		}
 		
 
@@ -228,6 +229,26 @@ namespace CCRepl {
 		else ctx.WriteLine(ctx.FindCommand(str::DotSeparated(*inputCmd))->PrintTree("", ""));
 	}
 
+	static void CommandList(ReplContext& ctx, CommandArgs& args) {
+		std::optional<std::string> inputKey = args.Get<std::string>(0);
+		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
+		std::string sk = str::ToLower(ik);								// Lower case, for searching.
+		auto filtered = ctx.CommandReg | std::views::filter(
+			[&sk](const auto& it) { return it.first.starts_with(sk); }
+		);
+		std::size_t count = std::ranges::distance(filtered);
+		if (count == 0) {
+			ctx.WriteLine(std::format("No commands found starting with '{}'. Try 'Help.Alias' for possible aliases.", ik));
+			return;
+		}
+		if (inputKey) ctx.WriteLine(std::format("Printing all commands beginning with '{}' ({} total):\n", ik, count));
+		else ctx.WriteLine(std::format("Printing all commands ({} total):\n", count));
+
+		std::ostringstream oss;
+		for (const auto& it : filtered) oss << it.first << '\n';
+		ctx.WriteLine(oss.str());
+	}
+
 	static void Clear(ReplContext& ctx, CommandArgs& args) {
 		if (args.Opt("-b")) ctx.Clear();
 		else ctx.Clear(args.GetOr<std::string>(0, "Cleared Screen."));
@@ -276,7 +297,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Exec(HelpAlias)
 				.Args(StrArg("Search Key", ArgMode::Optional))
 				.Options("-g")
-				.Desc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
+				.Desc("Lists all aliases and corresponding canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
 				.LongDesc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.Behaviour altered with option : \n * '-g' ('group') : Prints by group.")
 				.Examples({"Help.Aliases", "Help.als", "Help.Aliases(Journal.Add)", "Help.Aliases() -g"})
 				.Group("Base"),
@@ -287,6 +308,27 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Args(StrArg("Command Name", ArgMode::Optional))
 				.Desc("Prints command tree, or command tree descended from a command if specified. Visualisation of command map/hierarchy.")
 				.Examples({"Help.Tree", "Help.map()", "Help.Tree(Diary.Add)"})
+				.Group("Base")
+
+			),
+
+			Cmd("CommandList")
+			.Aliases("cmd", "commands", "command")
+			.Exec(CommandList)
+			.Args(StrArg("Search Key", ArgMode::Optional, ""))
+			.Desc("Lists all commands, or all commands beginning with seach key if specified.")			
+			.Examples({"CommandList", "cmd", "CommandList(Diary)"})
+			.Group("Base")
+			.Children(
+
+				Cmd("Aliases")
+				.Aliases("a", "als", "alias")
+				.Exec(HelpAlias)
+				.Args(StrArg("Search Key", ArgMode::Optional))
+				.Options("-g")
+				.Desc("Lists all aliases and corresponding canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
+				.LongDesc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.Behaviour altered with option : \n * '-g' ('group') : Prints by group.")
+				.Examples({ "CommandList.Aliases", "CommandList.als", "CommandList.Aliases(Journal.Add)", "CommandList.Aliases() -g" })
 				.Group("Base")
 
 			),

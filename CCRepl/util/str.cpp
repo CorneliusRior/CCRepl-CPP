@@ -161,7 +161,6 @@ namespace str {
 	}
 
 	std::string TruncatePadCenter(const std::string& text, std::size_t w, const std::string& truncateString) {
-		p(STR_FUNC_LOG(text, w, truncateString));
 		std::string r = Truncate(text, w, truncateString);
 		std::size_t gap = w - StrLength(r);
 		return Repeat(" ", gap / 2) + r + Repeat(" ", gap % 2 == 1 ? (gap / 2) + 1 : gap / 2);
