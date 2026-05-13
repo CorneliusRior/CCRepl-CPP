@@ -13,11 +13,12 @@ namespace CCRepl {
 
 		std::vector<std::unique_ptr<IArgValue>> Args;
 		std::vector<std::string> Options;
+		ReplCommand* Cmd;
 		std::string CommandAddress;
 
 		// Constructor: (CommandArgs Args(*this, cmd, tokens, options), something like that)
-		CommandArgs(ReplContext& ctx, ReplCommand* cmd, const std::vector<std::string> args, const std::vector<std::string> opt);
-		
+		CommandArgs(ReplContext& ctx, ReplCommand* cmd, const std::vector<std::string> args, const std::vector<std::string> opt);		
+
 		/// <summary>
 		/// Returns true if given string exists in the options vector. Not case sensitive.
 		/// </summary>

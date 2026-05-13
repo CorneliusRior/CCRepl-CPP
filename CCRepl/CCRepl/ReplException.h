@@ -23,4 +23,11 @@ namespace CCRepl {
 
 		}
 	};
+
+	class ScriptException : public std::runtime_error {
+	public:
+		explicit ScriptException(const std::string& msg) : std::runtime_error(msg) {
+
+		}
+	};
 }

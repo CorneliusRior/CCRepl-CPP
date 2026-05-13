@@ -6,7 +6,8 @@ namespace CCRepl {
 
 	CommandArgs::CommandArgs(ReplContext& ctx, ReplCommand* cmd, const std::vector<std::string> args, const std::vector<std::string> opt) {
 
-		CommandAddress = cmd->Address;
+		Cmd = cmd;
+		CommandAddress = Cmd->Address;
 		Options = opt;
 
 		// Get ArgSpecs from command, iterate through each w/ args.
