@@ -149,7 +149,6 @@
     <ClInclude Include="ReplCommand.h" />
     <ClInclude Include="ReplContext.h" />
     <ClInclude Include="ReplException.h" />
-    <ClInclude Include="ScriptModels.h" />
     <ClInclude Include="Tokenizers.h" />
   </ItemGroup>
   <ItemGroup>

@@ -17,20 +17,20 @@ namespace CCRepl {
 		std::vector<std::string> args;
 		std::vector<std::string> opts;
 
-		CommandTokens();
-		CommandTokens(std::string cmdHead, std::vector<std::string> a, std::vector<std::string> o);
+		//CommandTokens();
+		//CommandTokens(std::string cmdHead, std::vector<std::string> a, std::vector<std::string> o);
 
 		std::string Print() const;
 	};	
 
 	struct ScriptStatement {
 		CommandTokens tokens;
-		std::size_t stmtIndex;
-		std::size_t startLine;
-		std::size_t endLine;
+		std::size_t stmtIndex = 0;
+		std::size_t startLine = 0;
+		std::size_t endLine = 0;
 
-		ScriptStatement();
-		ScriptStatement(std::string commandHead, std::vector<std::string> args, std::vector<std::string> opts, std::size_t index, std::size_t start, std::size_t end);
+		//ScriptStatement();
+		//ScriptStatement(std::string commandHead, std::vector<std::string> args, std::vector<std::string> opts, std::size_t index, std::size_t start, std::size_t end);
 	};
 
 	struct ScriptMetaData {

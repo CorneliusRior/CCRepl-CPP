@@ -3,13 +3,13 @@
 
 namespace CCRepl {
 
-	CommandTokens::CommandTokens(std::string cmdHead, std::vector<std::string> a, std::vector<std::string> o) : commandHead(cmdHead), args(a), opts(o) { }
+	//CommandTokens::CommandTokens(std::string cmdHead, std::vector<std::string> a, std::vector<std::string> o) : commandHead(cmdHead), args(a), opts(o) { }
 
 	std::string CommandTokens::Print() const {
 		return str::PresentList(args, commandHead, ", ", "(", ")") + str::PresentList(opts, "", " ", " ", "");
 	}
 
-	ScriptStatement::ScriptStatement(std::string commandHead, std::vector<std::string> args, std::vector<std::string> opts, std::size_t index, std::size_t start, std::size_t end) : tokens(commandHead, args, opts), stmtIndex(index), startLine(start), endLine(end) { }
+	//ScriptStatement::ScriptStatement(std::string commandHead, std::vector<std::string> args, std::vector<std::string> opts, std::size_t index, std::size_t start, std::size_t end) : tokens(commandHead, args, opts), stmtIndex(index), startLine(start), endLine(end) { }
 
 	CommandTokens TokenizeParen(const std::string& input) {
 

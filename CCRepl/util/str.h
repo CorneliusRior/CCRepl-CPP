@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <chrono>
 #include <format>
+#include <fstream>
 #include <unordered_set>
 #include <sstream>
 #include <string>
@@ -58,6 +59,9 @@ namespace str {
     std::string ToString(const std::tm& time);
     std::string ToDateString(const std::tm& time);
     std::string DayOfWeek(const std::tm& time);
+
+    // File things:
+    std::string ReadTextFile(const std::string& path);
 
     void p(std::string text);
 

@@ -435,6 +435,17 @@ namespace str {
 		}
 	}
 
+	std::string ReadTextFile(const std::string& path) {
+		std::ifstream file(path);
+		p(STR_VAR_DEF(path));
+
+		if (!file) throw std::runtime_error("Could not open file: " + path);
+
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		return buffer.str();
+	}
+
 	void p(std::string text) { std::cout << text << std::endl; }
 
 	std::vector<std::string> SepArgNames(std::string argNames) {

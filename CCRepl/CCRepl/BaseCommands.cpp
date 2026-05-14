@@ -270,6 +270,14 @@ namespace CCRepl {
 		ctx.Test(input, args.HasOptStart("-r"));
 	}
 
+	static void Script(ReplContext& ctx, CommandArgs& args) {
+		// just occured to me that "mode" should be in commandargs instead of ctx, will change that.
+		ctx.WriteLine("*Scripting is WIP.*");
+		ctx.WriteLine("For the time being, we will just import the text and then print it:");
+		std::string scriptTxt = str::ReadTextFile(args.GetRequired<std::string>(0));
+		ctx.WriteLine(scriptTxt);
+	}
+
 	static void Clear(ReplContext& ctx, CommandArgs& args) {
 		if (args.Opt("-b")) ctx.Clear();
 		else ctx.Clear(args.GetOr<std::string>(0, "Cleared Screen."));
@@ -348,7 +356,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Args(StrArg("Search Key", ArgMode::Optional))
 				.Options("-g")
 				.Desc("Lists all aliases and corresponding canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
-				.LongDesc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.Behaviour altered with option : \n * '-g' ('group') : Prints by group.")
+				.LongDesc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified. Behaviour altered with option : \n * '-g' ('group') : Prints by group.")
 				.Examples( "CommandList.Aliases", "CommandList.als", "CommandList.Aliases(Journal.Add)", "CommandList.Aliases() -g" )
 				.Group("Base")
 
@@ -363,6 +371,32 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 			.LongDesc("Runs the TestAsync method on specified command with specified arguments. Prompts if no input is given. Behaviour altered by options:\n * '-r' ('run'): Runs the command on success.")
 			.Examples("Test({Diary.Add(This is a test entry) -f})")
 			.Group("Base"),
+
+			Cmd("Script")
+			.Aliases("scrpt", "scpt")
+			.Desc("Commands for running scripts by file path, nodal.")
+			.Group("Base")
+			.Children(
+				
+				Cmd("Run")
+				.Aliases("r", "execute", "testandrun")
+				.Exec(Script)
+				.Args(StrArg("Script file path", ArgMode::RequiredPrompt, "", "Enter filepath (to cancel, leave blank, or type one of the following: { '\\', '_', 'cancel' }):", "", {"\\", "_", "", "cancel"}))
+				.Options("-f")
+				.Mode(1)
+				.Desc("Parses, tests, and runs a script.")
+				.LongDesc("Parses, tests, and runs a script. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-f' ('force'): Runs the script without testing.")
+				.Group("Base"),
+
+				Cmd("Test")
+				.Aliases("t", "tst")
+				.Exec(Script)
+				.Args(StrArg("Script file path", ArgMode::RequiredPrompt, "", "Enter filepath (to cancel, leave blank, or type one of the following: { '\\', '_', 'cancel' }):", "", { "\\", "_", "", "cancel" }))
+				.Desc("Parses and tests a script.")
+				.LongDesc("Parses and tests a script. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.")
+				.Group("Base")
+
+			),
 
 			Cmd("Clear")
 			.Aliases( "clr", "clearscreen" )
