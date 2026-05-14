@@ -30,6 +30,7 @@ namespace str {
     std::string TrimAscii(const std::string& text);
     std::string TrimChar(const std::string& text, char c);
     std::string TrimCharAscii(const std::string& text, char c);
+    std::string TrimChars(const std::string& text, const std::vector<char>& cs);
     std::string TrimToLower(const std::string& text);
     std::string DotSeparated(const std::string& text, bool removeDuplicates = true);
     std::string Truncate(const std::string& text, std::size_t w, const std::string& truncateString = "…");

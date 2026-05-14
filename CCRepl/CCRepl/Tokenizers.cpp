@@ -3,13 +3,67 @@
 
 namespace CCRepl {
 
-	//CommandTokens::CommandTokens(std::string cmdHead, std::vector<std::string> a, std::vector<std::string> o) : commandHead(cmdHead), args(a), opts(o) { }
-
 	std::string CommandTokens::Print() const {
 		return str::PresentList(args, commandHead, ", ", "(", ")") + str::PresentList(opts, "", " ", " ", "");
 	}
 
-	//ScriptStatement::ScriptStatement(std::string commandHead, std::vector<std::string> args, std::vector<std::string> opts, std::size_t index, std::size_t start, std::size_t end) : tokens(commandHead, args, opts), stmtIndex(index), startLine(start), endLine(end) { }
+	std::string CommandTokens::Print_ML() const {
+		return str::PresentList(args, commandHead, ",\n\t", " (\n\t", "\n)") + str::PresentList(opts, "", " ", " ", "");
+	}
+
+	std::string ScriptStatement::Print() const {
+		return std::format("Statement #{} (Lines {}-{}): {};", stmtIndex, startLine, endLine, tokens.Print());
+	}
+
+	std::string ScriptStatement::Print_ML() const {
+		return std::format("Statement #{} (Lines {}-{}):\n{};", stmtIndex, startLine, endLine, tokens.Print_ML());
+	}
+
+	std::string PrintSStmtList(const std::vector<ScriptStatement>& lst) {
+		std::ostringstream oss;
+		for (ScriptStatement stmt : lst) {
+			oss << stmt.Print_ML() << "\n\n";
+		}
+		return oss.str();
+	}
+
+	ScriptMetaData::ScriptMetaData(std::vector<std::string> args) {
+		if (args.size() != 4) throw ScriptException(std::format("Script statement has '{}' items, expected 4.\n{}", args.size(), STR_PRINT_V(args)));
+
+		const static std::vector<char> colons = { ' ', ':', '=', '-' };
+		std::vector<std::string> errs;
+
+		auto RemoveLabel = [&](std::string text, const std::string& label) {
+			if (str::StartsWith(text, label)) text = str::DropFirstUtf8(text, str::StrLength(label));
+			text = str::TrimChars(text, colons);
+			if (text.empty()) errs.push_back(std::format("ScriptMetaData item '{}' is empty.", label));
+			return text;
+			};
+
+		// We'll just do it manually I guess.
+		std::string fmt = RemoveLabel(args[0], "format");
+		std::string nme = RemoveLabel(args[1], "name");
+		std::string ath = RemoveLabel(args[2], "author");
+		std::string dte = RemoveLabel(args[3], "created");
+		
+		std::tm crt;
+		if (!parsers::TryTime(dte, crt)) errs.push_back(std::format("Could not parse ScriptMetaData item 'created': '{}'", dte));
+
+		if (errs.size() > 0) throw ScriptException(str::PresentList(errs, "Could not parse ScriptMetaData, errors:", "\n", "\n", ""));
+		Format = fmt;
+		Name = nme;
+		Author = ath;
+		Created = crt;
+	}
+
+	std::string ScriptMetaData::Print() const {
+		fmt::TextBlock blk;
+		blk.Lines.push_back(fmt::TextLine(std::format("Format: {}", Format)));
+		blk.Lines.push_back(fmt::TextLine(std::format("Script Name: {}", Name)));
+		blk.Lines.push_back(fmt::TextLine(std::format("Author: {}", Author)));
+		blk.Lines.push_back(fmt::TextLine(std::format("Created: {}", str::ToDateString(Created))));
+		return fmt::TextBox(blk, Name).PrintStr();
+	}
 
 	CommandTokens TokenizeParen(const std::string& input) {
 
@@ -159,7 +213,7 @@ namespace CCRepl {
 		if (scriptLength == 0) return r;
 
 		std::size_t statementIndex = 0;
-		std::size_t currentLine = 0;
+		std::size_t currentLine = 1;
 		CommandTokens currentToken;
 		ScriptStatement currentStatement;
 

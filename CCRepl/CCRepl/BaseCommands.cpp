@@ -276,6 +276,14 @@ namespace CCRepl {
 		ctx.WriteLine("For the time being, we will just import the text and then print it:");
 		std::string scriptTxt = str::ReadTextFile(args.GetRequired<std::string>(0));
 		ctx.WriteLine(scriptTxt);
+
+		ctx.WriteLine("\n\n***End of Script***\n\nNow we will try to parse it:\n");
+		std::vector<ScriptStatement> sstmtList = TokenizeScript(scriptTxt);
+		ctx.WriteLine(PrintSStmtList(sstmtList));
+
+		ctx.WriteLine("\n\n***Parse MetaData:***\n");
+		ScriptMetaData metadata = (sstmtList[0].tokens.args);
+		ctx.WriteLine(metadata.Print());
 	}
 
 	static void Clear(ReplContext& ctx, CommandArgs& args) {

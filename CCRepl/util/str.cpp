@@ -119,6 +119,15 @@ namespace str {
 		return (e == std::string::npos) ? "" : text.substr(s, e - s + 1);
 	}
 
+	std::string TrimChars(const std::string& text, const std::vector<char>& cs) {
+		auto isTrim = [&](char c) { return std::find(cs.begin(), cs.end(), c) != cs.end(); };
+		auto s = std::find_if_not(text.begin(), text.end(), isTrim);
+		auto e = std::find_if_not(text.rbegin(), text.rend(), isTrim).base();
+
+		if (s >= e) return "";
+		return std::string(s, e);
+	}
+
 	// Trims spaces and sets characters to lower case, useful for comparing strings.
 	std::string TrimToLower(const std::string& text) {
 		return ToLower(Trim(text));
