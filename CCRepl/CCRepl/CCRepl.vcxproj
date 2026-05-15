@@ -149,6 +149,7 @@
     <ClInclude Include="ReplCommand.h" />
     <ClInclude Include="ReplContext.h" />
     <ClInclude Include="ReplException.h" />
+    <ClInclude Include="Script.h" />
     <ClInclude Include="Tokenizers.h" />
   </ItemGroup>
   <ItemGroup>
@@ -165,6 +166,7 @@
     </ClCompile>
     <ClCompile Include="ReplCommand.cpp" />
     <ClCompile Include="ReplContext.cpp" />
+    <ClCompile Include="Script.cpp" />
     <ClCompile Include="Tokenizers.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -6,6 +6,10 @@
 #include "fmt.h"
 #include "ReplCommand.h"
 #include "ReplContext.h"
+#include "Script.h"
+
+// Conditional update (used in ScriptHandler, can be used elsewhere):
+#define BASE_CU(msg) if (PrintAll) ctx.WriteLine(msg)
 
 namespace CCRepl {
 
@@ -111,7 +115,7 @@ namespace CCRepl {
 		
 
 		// Print announcement:
-		std::string beginStmt = inputKey.has_value() ? std::format("beginning with '{}'", ik) : "";
+		std::string beginStmt = inputKey.has_value() ? std::format(" beginning with '{}'", ik) : "";
 		if (att == HelpAttribute::Full) ctx.WriteLine(std::format("Printing full information for all commands{} ({} total):\n", beginStmt, count));
 		else ctx.WriteLine(std::format("Printing addresses and {} for all commands{} ({} total):\n", ToString(att), beginStmt, count));
 
@@ -270,20 +274,36 @@ namespace CCRepl {
 		ctx.Test(input, args.HasOptStart("-r"));
 	}
 
-	static void Script(ReplContext& ctx, CommandArgs& args) {
+	static void ScriptHandler(ReplContext& ctx, CommandArgs& args) {
 		// just occured to me that "mode" should be in commandargs instead of ctx, will change that.
-		ctx.WriteLine("*Scripting is WIP.*");
-		ctx.WriteLine("For the time being, we will just import the text and then print it:");
-		std::string scriptTxt = str::ReadTextFile(args.GetRequired<std::string>(0));
-		ctx.WriteLine(scriptTxt);
+		bool PrintAll = args.HasOptStart("-p");
 
-		ctx.WriteLine("\n\n***End of Script***\n\nNow we will try to parse it:\n");
-		std::vector<ScriptStatement> sstmtList = TokenizeScript(scriptTxt);
-		ctx.WriteLine(PrintSStmtList(sstmtList));
+		std::string path = args.GetRequired<std::string>(0);
+		BASE_CU(std::format("Loading file '{}':\n\n", path));
+		std::string scriptTxt = str::ReadTextFile(path);
+		BASE_CU(scriptTxt);
 
-		ctx.WriteLine("\n\n***Parse MetaData:***\n");
-		ScriptMetaData metadata = (sstmtList[0].tokens.args);
-		ctx.WriteLine(metadata.Print());
+		BASE_CU("\n\nTokenizing...");
+		std::vector<ScriptToken> sstmtList = TokenizeScript(scriptTxt);
+
+		BASE_CU("Converting to script...");
+		Script scp(ctx, sstmtList);
+		//Script scp = TextToScript(ctx, scriptTxt); // this also works.
+
+
+		BASE_CU("Converted.");
+
+		if (args.IsMode(1)) {
+			if (args.HasOptStart("-f")) scp.Execute(ctx);
+			else {
+				if (scp.Test(ctx, !PrintAll)) {
+					ctx.WriteLine("Running...");
+					scp.Execute(ctx);
+				}
+				else ctx.WriteLine("Test failed, not running. Use option '-f' to force run if you believe this is a mistake.");
+			}
+		}
+		else scp.Test(ctx, !PrintAll);
 	}
 
 	static void Clear(ReplContext& ctx, CommandArgs& args) {
@@ -309,6 +329,7 @@ namespace CCRepl {
 			Cmd("Help")
 			.Aliases("h", "?")
 			.Exec(Help)
+			.Test(HelpTest)
 			.Args(StrArg("Search Key", ArgMode::Optional))
 			.Options("-a", "-d", "-e", "-f", "-g", "-l", "-m", "-o", "-u")
 			.Desc("Lists all commands and descriptions, or shows full help for all commands with Search Key is specified.")
@@ -387,21 +408,22 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 			.Children(
 				
 				Cmd("Run")
-				.Aliases("r", "execute", "testandrun")
-				.Exec(Script)
+				.Aliases("r", "execute", "ex", "testandrun")
+				.Exec(ScriptHandler)
 				.Args(StrArg("Script file path", ArgMode::RequiredPrompt, "", "Enter filepath (to cancel, leave blank, or type one of the following: { '\\', '_', 'cancel' }):", "", {"\\", "_", "", "cancel"}))
-				.Options("-f")
+				.Options("-f", "-p")
 				.Mode(1)
-				.Desc("Parses, tests, and runs a script.")
-				.LongDesc("Parses, tests, and runs a script. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-f' ('force'): Runs the script without testing.")
+				.Desc("Parses, tests, and runs a script by file path.")
+				.LongDesc("Parses, tests, and runs a script by file path. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-f' ('force'): Runs the script without testing.\n * '-p' ('print'): Prints more information when parsing.")
 				.Group("Base"),
 
 				Cmd("Test")
 				.Aliases("t", "tst")
-				.Exec(Script)
+				.Exec(ScriptHandler)
 				.Args(StrArg("Script file path", ArgMode::RequiredPrompt, "", "Enter filepath (to cancel, leave blank, or type one of the following: { '\\', '_', 'cancel' }):", "", { "\\", "_", "", "cancel" }))
-				.Desc("Parses and tests a script.")
-				.LongDesc("Parses and tests a script. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.")
+				.Options("-p")
+				.Desc("Parses and tests a script by file path.")
+				.LongDesc("Parses and tests a script by file path. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-p' ('print'): Prints more information when parsing.")
 				.Group("Base")
 
 			),

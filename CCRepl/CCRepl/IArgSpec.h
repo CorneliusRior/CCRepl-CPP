@@ -86,7 +86,7 @@ namespace CCRepl {
 		std::unique_ptr<IArgValue> Parse(const std::string& text) const override {
 			T value{};
 			if (parser_(text, value)) return std::make_unique<ArgValue<T>>(value);
-			throw ReplUserException(std::format("Cannot parse argument '{}': {}", Print(), text));
+			throw ReplUserException(std::format("Cannot parse argument '{}': '{}'", Print(), text));
 		}
 
 		std::unique_ptr<IArgValue> Fallback() const override {

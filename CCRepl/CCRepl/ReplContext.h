@@ -6,6 +6,7 @@
 #include "Tokenizers.h"
 #include "parsers.h"
 #include "ReplCommand.h"
+#include "Script.h"
 
 namespace CCRepl {
 

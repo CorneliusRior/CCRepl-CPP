@@ -1,11 +1,11 @@
 #pragma once
-
 #include "IArgSpec.h"
 
 namespace CCRepl {
 
 	class ReplCommand;
 	class ReplContext;
+	struct ScriptToken;
 
 	// Generated whenever a command is called.
 	class CommandArgs {
@@ -18,6 +18,12 @@ namespace CCRepl {
 
 		// Constructor: (CommandArgs Args(*this, cmd, tokens, options), something like that)
 		CommandArgs(ReplContext& ctx, ReplCommand* cmd, const std::vector<std::string> args, const std::vector<std::string> opt);		
+
+		// Constructor for scripts:
+		CommandArgs(ReplContext& ctx, const ScriptToken& tokens);
+
+		int Mode();
+		bool IsMode(int mode);
 
 		/// <summary>
 		/// Returns true if given string exists in the options vector. Not case sensitive.
