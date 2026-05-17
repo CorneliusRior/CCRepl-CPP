@@ -8,6 +8,12 @@ Includes tools to help parse and validate arguments and format output strings, i
 
 There is also a version of CCRepl written in C#: [https://github.com/CorneliusRior/CCRepl-CS](https://github.com/CorneliusRior/CCRepl-CS)
 
+More documentation:
+- [Getting Started](CCRepl/docs/getting-started.md)
+- [Defining Commands](CCRepl/docs/defining-commands.md)
+- [Defining Command Handlers](CCRepl/docs/defining-command-handlers.md)
+
+
 ## Features
 - Hierarchical command structure.
 - Automatic command registration.
