@@ -3,6 +3,14 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/docs/">
+    <File Path="defining-command-handlers.md" />
+    <File Path="defining-commands.md" />
+    <File Path="getting-started.md" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
   <Project Path="CCRepl.CLI/CCRepl.CLI.vcxproj" Id="8c6ab097-1ae1-42ab-8997-377be0712d23" />
   <Project Path="CCRepl/CCRepl.vcxproj" Id="cc433910-af0a-4ac5-80c2-d95a77aa4732" />
   <Project Path="util/util.vcxproj" Id="5c346014-b31a-4cf3-9451-322df07c78ce" />

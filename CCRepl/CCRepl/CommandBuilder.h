@@ -51,7 +51,6 @@ namespace CCRepl {
 		explicit CommandBuilder(std::string name);
 		CommandBuilder& Exec(std::function<void(ReplContext&, CommandArgs&)> exec);
 		CommandBuilder& Test(std::function<bool(ReplContext&, CommandArgs&)> test);
-		CommandBuilder& Args();
 		CommandBuilder& Mode(int mode);
 		CommandBuilder& Desc(std::string desc);
 		CommandBuilder& LongDesc(std::string longDesc);

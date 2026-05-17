@@ -58,7 +58,7 @@ namespace CCRepl {
 
 		bool group = args.HasOptStart("-g");
 
-		// Define col here w/ max, right now just '30';
+		// Define col here w/ max:
 		std::size_t col = 0;
 		for (const auto& it : filtered) if (it.first.size() > col) col = it.first.size();
 		col += 5;
