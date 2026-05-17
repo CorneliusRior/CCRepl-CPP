@@ -10,11 +10,11 @@
 
 namespace CCRepl {
 
-	static void Handler(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(Handler) {
 		ctx.WriteLine("Not yet implemented.");
 	}
 
-	static void Help(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(Help) {
 
 		// Create filtered map (shows all if string is empty):
 		std::optional<std::string> inputKey = args.Get<std::string>(0);
@@ -121,7 +121,7 @@ namespace CCRepl {
 	}
 
 	// Silly test, frankly you can disregard this one:
-	static bool HelpTest(ReplContext& ctx, CommandArgs& args) {
+	CMD_T(HelpTest) {
 		std::optional<std::string> inputKey = args.Get<std::string>(0);
 		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
 		std::string sk = str::ToLower(ik);								// Lower case, for searching
@@ -136,7 +136,7 @@ namespace CCRepl {
 		else return true;
 	}
 
-	static void HelpAlias(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(HelpAlias) {
 
 		// Create filtered map (shows all if string is empty):
 		std::optional<std::string> inputKey = args.Get<std::string>(0);
@@ -240,13 +240,13 @@ namespace CCRepl {
 		ctx.WriteLine(fmt::TxtBoxCenter(report.str(), inputKey.has_value() ? ik : "All"));
 	}
 
-	static void HelpTree(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(HelpTree) {
 		std::optional<std::string> inputCmd = args.Get<std::string>(0);
 		if (!inputCmd) ctx.WriteLine(ctx.RootTree());
 		else ctx.WriteLine(ctx.FindCommand(str::DotSeparated(*inputCmd))->PrintTree("", ""));
 	}
 
-	static void CommandList(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(CommandList) {
 		std::optional<std::string> inputKey = args.Get<std::string>(0);
 		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
 		std::string sk = str::ToLower(ik);								// Lower case, for searching.
@@ -266,28 +266,18 @@ namespace CCRepl {
 		ctx.WriteLine(oss.str());
 	}
 
-	static void TestInput(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(TestInput) {
 		std::string input = args.GetRequired<std::string>(0);
 		ctx.Test(input, args.HasOptStart("-r"));
 	}
 
-	static void ScriptHandler(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(ScriptHandler) {
 		// just occured to me that "mode" should be in commandargs instead of ctx, will change that.
 		bool PrintAll = args.HasOptStart("-p");
 
 		std::string path = args.GetRequired<std::string>(0);
-		//std::string scriptTxt = ctx.WaitSpinner<std::string>(
-		//	[&]() { return str::ReadTextFile(path); },
-		//	std::format("Loading file '{}'", path), "Loaded."
-		//);
 		std::string scriptTxt = CTX_WAIT_SPIN(std::string, str::ReadTextFile(path), std::format("Loading file '{}'", path), "Loaded.");
-
 		if (PrintAll) ctx.WriteLine(scriptTxt + "\n\n");
-
-		//Script scp = ctx.WaitSpinner<Script>(
-		//	[&]() { return TextToScript(ctx, scriptTxt); }, 
-		//	"Generating Script", "Generated"
-		//);
 		Script scp = CTX_WAIT_SPIN(Script, TextToScript(ctx, scriptTxt), "Generating Script", "Generated.");
 
 		if (args.IsMode(1)) {
@@ -303,12 +293,12 @@ namespace CCRepl {
 		else scp.Test(ctx, !PrintAll);
 	}
 
-	static void Clear(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(Clear) {
 		if (args.Opt("-b")) ctx.Clear();
 		else ctx.Clear(args.GetOr<std::string>(0, "Cleared Screen."));
 	}
 
-	static void Echo(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(Echo) {
 		std::string r = args.GetRequired<std::string>(0);
 		for (std::size_t i = 0; i < args.GetRequired<std::size_t>(1); i++) {
 			ctx.Write(r);
@@ -316,7 +306,7 @@ namespace CCRepl {
 		ctx.WriteLine();
 	}
 
-	static void Exit(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(Exit) {
 		ctx.CloseApp();
 	}
 
@@ -412,6 +402,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Mode(1)
 				.Desc("Parses, tests, and runs a script by file path.")
 				.LongDesc("Parses, tests, and runs a script by file path. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-f' ('force'): Runs the script without testing.\n * '-p' ('print'): Prints more information when parsing.")
+				.Examples( "Script.Run()", "Script.Run(C:\\Users\\User\\Desktop\\Script.txt)", "Script.Run() -f")
 				.Group("Base"),
 
 				Cmd("Test")
@@ -421,6 +412,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Options("-p")
 				.Desc("Parses and tests a script by file path.")
 				.LongDesc("Parses and tests a script by file path. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-p' ('print'): Prints more information when parsing.")
+				.Examples("Script.Test()", "Script.Test(C:\\Users\\User\\Desktop\\Script.txt)")
 				.Group("Base")
 
 			),

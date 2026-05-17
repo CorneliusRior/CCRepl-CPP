@@ -6,7 +6,7 @@
 
 namespace CCRepl {
 
-	static void Handler(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(Handler) {
 		ctx.WriteLine("Nodal command (No handler, or execute function not yet implemented).\n");
 		ctx.WriteLine(args.Cmd->PrintFull());
 
@@ -21,7 +21,7 @@ namespace CCRepl {
 		return 0;
 	}
 
-	static void TestSpinner(ReplContext& ctx, CommandArgs& args) {
+	CMD_H(TestSpinner) {
 		std::future<int> ft = std::async(std::launch::async, WaitSeconds, args.GetRequired<std::size_t>(0));
 		int r = ctx.WaitSpinner<int>(std::move(ft));
 		ctx.WriteLine(r);
