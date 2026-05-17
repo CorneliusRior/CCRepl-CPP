@@ -125,34 +125,37 @@ namespace CCRepl {
 		}
 	}
 
-	void ReplContext::HideCaret() {
-		HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-		CONSOLE_CURSOR_INFO info;
-		GetConsoleCursorInfo(h, &info);
-		info.bVisible = false;
-		SetConsoleCursorInfo(h, &info);
-	}
-
-	void ReplContext::ShowCaret() {
-		HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-		CONSOLE_CURSOR_INFO info;
-		GetConsoleCursorInfo(h, &info);
-		info.bVisible = true;
-		SetConsoleCursorInfo(h, &info);
+	void ReplContext::SetCaretVis(bool visible) {
+		if (ReqSetCaretVis) ReqSetCaretVis(visible);
 	}
 
 	void ReplContext::WriteStatus(std::string text) {
-		size_t newLen = str::StrLength(text);
-		int diff = lastStatus - newLen;
-		for (diff; diff > 0; diff--) text += " ";
-		std::cout << "\r" << text << std::flush;
+		// Invoke ReqWriteStatus with msg:
+		std::size_t newLen = str::StrLength(text);
+		if (newLen > lastStatus)  {
+			for (std::size_t i = newLen; i < lastStatus; i++) {
+				text += ' ';
+			}
+		}
 		lastStatus = newLen;
+		
+		if (ReqWriteStatus) ReqWriteStatus(text);
+		else {
+			Write("\r");
+			Write(text);
+		}
 	}
 
 	void ReplContext::ClearStatus(std::string text) {
 		for (size_t i = str::StrLength(text); i < lastStatus; i++) text += " ";
-		std::cout << "\r" << text << std::endl << std::flush;
 		lastStatus = 0;
+
+		if (ReqClearStatus) ReqClearStatus(text);
+		else if (ReqWriteStatus) ReqWriteStatus(text + '\n');
+		else {
+			Write("\r");
+			WriteLine(text);
+		}
 	}
 
 	// Overrides:

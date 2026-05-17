@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <Windows.h>
 #include "ReplContext.h"
 
 int main()
@@ -20,6 +21,15 @@ int main()
         };
     ctx.ReqWriteLine = [](const std::string& msg) { std::cout << msg << std::endl; };
     ctx.ReqWrite = [](const std::string& msg) { std::cout << msg; };
+    ctx.ReqSetCaretVis = [](bool visible) {
+        HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+        CONSOLE_CURSOR_INFO info;
+        GetConsoleCursorInfo(h, &info);
+        info.bVisible = visible;
+        SetConsoleCursorInfo(h, &info);
+        };
+    ctx.ReqWriteStatus = [](std::string msg) { std::cout << '\r' << msg << std::flush; };
+    ctx.ReqClearStatus = [](std::string msg) { std::cout << '\r' << msg << '\n' << std::flush; };
 
     while (ctx.running) {
         ctx.Write("> ");

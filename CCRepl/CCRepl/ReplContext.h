@@ -1,7 +1,6 @@
 #pragma once
 #include <map>
 #include <typeindex>
-#include <Windows.h>
 #include "CommandSet.h"
 #include "Tokenizers.h"
 #include "parsers.h"
@@ -45,10 +44,12 @@ namespace CCRepl {
 		bool Confirm(const std::string& prompt = "(Y/N): ", const std::string& retryPrompt = "Cannot parse, please try again.");
 
 		// Status:
-		void HideCaret();
-		void ShowCaret();
+		void SetCaretVis(bool visible);
 		void WriteStatus(std::string text);
 		void ClearStatus(std::string text = "");
+		std::function<void(bool)> ReqSetCaretVis;
+		std::function<void(std::string text)> ReqWriteStatus;
+		std::function<void(std::string text)> ReqClearStatus;
 
 		// Overloads:
 		void WriteLine(double value) const;
