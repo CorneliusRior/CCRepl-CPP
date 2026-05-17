@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "str.h"
+#include <future>
 #include <iostream>
 
 namespace str {
@@ -452,6 +453,7 @@ namespace str {
 
 		std::stringstream buffer;
 		buffer << file.rdbuf();
+
 		return buffer.str();
 	}
 

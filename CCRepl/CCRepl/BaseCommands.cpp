@@ -279,16 +279,28 @@ namespace CCRepl {
 		bool PrintAll = args.HasOptStart("-p");
 
 		std::string path = args.GetRequired<std::string>(0);
-		BASE_CU(std::format("Loading file '{}':\n\n", path));
-		std::string scriptTxt = str::ReadTextFile(path);
-		BASE_CU(scriptTxt);
+		std::string scriptTxt = ctx.WaitSpinner<std::string>(
+			std::async(std::launch::async, str::ReadTextFile, path),
+			std::format("Loading file '{}'", path),
+			"Loaded.");
+		//std::string scriptTxt = str::ReadTextFile(path);
+		BASE_CU(scriptTxt + "\n\n");
 
-		BASE_CU("\n\nTokenizing...");
-		std::vector<ScriptToken> sstmtList = TokenizeScript(scriptTxt);
+		//BASE_CU("\n\nTokenizing...");
+		//std::vector<ScriptToken> sstmtList = ctx.WaitSpinner <std::vector<ScriptToken>>(
+		//	std::async(std::launch::async, TokenizeScript, scriptTxt),
+		//	"Tokenizing", "Tokenized."
+		//);
+		////std::vector<ScriptToken> sstmtList = TokenizeScript(scriptTxt);
 
 		BASE_CU("Converting to script...");
-		Script scp(ctx, sstmtList);
-		//Script scp = TextToScript(ctx, scriptTxt); // this also works.
+		//Script scp(ctx, sstmtList);
+		Script scp =  ctx.WaitSpinner<Script>(
+			std::async(std::launch::async, [&]() {
+				return TextToScript(ctx, scriptTxt);
+				}),
+			"Generating Script", "Generated"
+		);
 
 
 		BASE_CU("Converted.");

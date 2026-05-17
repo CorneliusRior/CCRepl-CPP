@@ -95,7 +95,7 @@ namespace CCRepl {
 			else SCP_PRS_UPD(std::format("Method '{}' has no test function: Deemed Success.", stmt.Args.CommandAddress));			
 		}
 		if (errs.empty()) {
-			ctx.WriteLine("\n\nTesting complete: No issues found.");
+			ctx.WriteLine("Testing complete: No issues found.");
 			return true;
 		}
 		else {
