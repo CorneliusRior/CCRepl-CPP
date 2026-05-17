@@ -8,9 +8,6 @@
 #include "ReplContext.h"
 #include "Script.h"
 
-// Conditional update (used in ScriptHandler, can be used elsewhere):
-#define BASE_CU(msg) if (PrintAll) ctx.WriteLine(msg)
-
 namespace CCRepl {
 
 	static void Handler(ReplContext& ctx, CommandArgs& args) {
@@ -279,31 +276,19 @@ namespace CCRepl {
 		bool PrintAll = args.HasOptStart("-p");
 
 		std::string path = args.GetRequired<std::string>(0);
-		std::string scriptTxt = ctx.WaitSpinner<std::string>(
-			std::async(std::launch::async, str::ReadTextFile, path),
-			std::format("Loading file '{}'", path),
-			"Loaded.");
-		//std::string scriptTxt = str::ReadTextFile(path);
-		BASE_CU(scriptTxt + "\n\n");
-
-		//BASE_CU("\n\nTokenizing...");
-		//std::vector<ScriptToken> sstmtList = ctx.WaitSpinner <std::vector<ScriptToken>>(
-		//	std::async(std::launch::async, TokenizeScript, scriptTxt),
-		//	"Tokenizing", "Tokenized."
+		//std::string scriptTxt = ctx.WaitSpinner<std::string>(
+		//	[&]() { return str::ReadTextFile(path); },
+		//	std::format("Loading file '{}'", path), "Loaded."
 		//);
-		////std::vector<ScriptToken> sstmtList = TokenizeScript(scriptTxt);
+		std::string scriptTxt = CTX_WAIT_SPIN(std::string, str::ReadTextFile(path), std::format("Loading file '{}'", path), "Loaded.");
 
-		BASE_CU("Converting to script...");
-		//Script scp(ctx, sstmtList);
-		Script scp =  ctx.WaitSpinner<Script>(
-			std::async(std::launch::async, [&]() {
-				return TextToScript(ctx, scriptTxt);
-				}),
-			"Generating Script", "Generated"
-		);
+		if (PrintAll) ctx.WriteLine(scriptTxt + "\n\n");
 
-
-		BASE_CU("Converted.");
+		//Script scp = ctx.WaitSpinner<Script>(
+		//	[&]() { return TextToScript(ctx, scriptTxt); }, 
+		//	"Generating Script", "Generated"
+		//);
+		Script scp = CTX_WAIT_SPIN(Script, TextToScript(ctx, scriptTxt), "Generating Script", "Generated.");
 
 		if (args.IsMode(1)) {
 			if (args.HasOptStart("-f")) scp.Execute(ctx);

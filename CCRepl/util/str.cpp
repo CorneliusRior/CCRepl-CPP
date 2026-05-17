@@ -447,13 +447,14 @@ namespace str {
 
 	std::string ReadTextFile(const std::string& path) {
 		std::ifstream file(path);
-		p(STR_VAR_DEF(path));
 
 		if (!file) throw std::runtime_error("Could not open file: " + path);
 
 		std::stringstream buffer;
 		buffer << file.rdbuf();
 
+		// delete:
+		std::this_thread::sleep_for(std::chrono::seconds(3));
 		return buffer.str();
 	}
 

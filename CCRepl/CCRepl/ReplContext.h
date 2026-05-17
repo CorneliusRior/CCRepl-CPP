@@ -8,6 +8,9 @@
 #include "ReplCommand.h"
 #include "Script.h"
 
+#define CTX_WAIT_SPIN(T, function, message, doneMessage) \
+	ctx.WaitSpinner<T>([&]() { return function; }, message, doneMessage)
+
 namespace CCRepl {
 
 	class ReplContext {
@@ -74,7 +77,7 @@ namespace CCRepl {
 
 		// Waiting:
 		template<typename T>
-		T WaitSpinner(std::future<T> ft, const std::string message = "Processing", const std::string doneMessage = "Done.") {
+		T WaitSpinner(std::future<T> ft, const std::string& message = "Processing", const std::string& doneMessage = "Done.") {
 			std::string msg = message.empty() ? "" : message + ' ';
 			const std::string frames[] = {
 				msg + '|',
@@ -92,6 +95,11 @@ namespace CCRepl {
 			ClearStatus(doneMessage);
 			SetCaretVis(true);
 			return r;
+		}
+
+		template<typename T>
+		T WaitSpinner(std::function<T()> func, const std::string& message = "Processing", const std::string& doneMessage = "Done.") {
+			return WaitSpinner<T>(std::async(std::launch::async, func), message, doneMessage);
 		}
 
 	private:

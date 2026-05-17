@@ -133,6 +133,8 @@ namespace CCRepl {
 	
 	Script TextToScript(ReplContext& ctx, const std::string& text) {
 		std::vector<ScriptToken> tokens = TokenizeScript(text);
+		// delete:
+		std::this_thread::sleep_for(std::chrono::seconds(3));
 		return Script(ctx, tokens);
 	}
 
