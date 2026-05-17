@@ -1,8 +1,8 @@
 # Defining Command Handlers
 Command handlers are functions which commands call when executed. 
 There are two types of command handler: 
-- **Execute:** `func<void(ReplContext&, CommandArgs&)>`
-- **Test:** `func<bool(ReplContext&, CommandArgs&)>`
+- **Execute:** `std::funcion<void(ReplContext&, CommandArgs&)>`
+- **Test:** `std::function<bool(ReplContext&, CommandArgs&)>`
 
 For information on how to define commands, see [defining-commands.md](defining-commands.md). 
 For information on how to set up a CCRepl environment, see [getting-started.md](getting-started.md).
@@ -94,14 +94,14 @@ Arguments come in the form of `std::vector<std::unique_ptr<IArgValue>> Args`, wh
 - **GetOr():** For optional arguments, returns T or some fallback.
 	- `T GetOr(std::size_t pos, T fallback)`
 - **GetRequired():** For required arguments, or optional arguments where fallback is set, or generally confident that the value is present.
-	- `T GetRequired(std::size_t)`
+	- `T GetRequired(std::size_t pos)`
 
 ### Example
 ```c++
 CMD_H(CmdHandler) {
 	std::optional<int> a = args.Get<int>(0);
 	std::string b = args.GetOr<std::string>(1, "Not present");
-	std::double c = args.GetRequired<double>(2);
+	double c = args.GetRequired<double>(2);
 }
 ```
 
@@ -115,8 +115,8 @@ Options come in the form of `std::vector<std::string> Options`, which is public.
 - **Opt():** Returns true if any given string is present in the options vector.
 	- `bool Opt(const Ts&... opts)`
 	- Useful for aliases.
-- **OptStart():** Returns true if any string in the options vector starts with one of the given strings.
-	- `bool OptStart(const Ts&... opts)`
+- **OptStrt():** Returns true if any string in the options vector starts with one of the given strings.
+	- `bool OptStrt(const Ts&... opts)`
 - **FirstOptionOf():** Given a list of strings, returns the position of the first of those string to appear in the options vector. If none appear, returns -1. 
 	- `int FirstOptionOf(const Ts&... opts)`
 	- Useful for switches for multiple functions, and cases where several options are mutually exclusive.
@@ -181,26 +181,26 @@ CMD_H(EditHandler) {
 			entry.Name = args.GetRequired<std::string>(1);			
 			break;
 		case 2:
-			entry.Agr = args.GetRequired<int>(1);
+			entry.Age = args.GetRequired<int>(1);
 			break;
 		default:
-			std::string newName = ctx.ReadLine("Enter new name, or '_' to keep old name);
+			std::string newName = ctx.ReadLine("Enter new name, or '_' to keep old name");
 			if (newName != "_") entry.Name = newName;
 
 			int newAge;
 			while (true) {
-				std::string newAgeStr = ctx.ReadLine("Enter new age, or '_' to keep old age);
+				std::string newAgeStr = ctx.ReadLine("Enter new age, or '_' to keep old age");
 				if (newAgeStr == "_") break;
-				if (parsers::TryInt(newAgrStr, newAge) {
+				if (parsers::TryInt(newAgeStr, newAge)) {
 					entry.Age = newAge;
-					breakl
+					break;
 				}
 			}
 			break;
 
 	}
 
-	if (args.OptStart("-f", "-q") || ctx.Confirm(std::format("Edit entry from \n{}\nto\n{}\nAre you sure? (Y/N): ", entryOld.Print(), entry.Print())))
+	if (args.OptStrt("-f", "-q") || ctx.Confirm(std::format("Edit entry from \n{}\nto\n{}\nAre you sure? (Y/N): ", entryOld.Print(), entry.Print())))
 		service->Update(entry);
 	if (!args.HasOptionStart("-q")) ctx.WriteLine(std::format("Updated entry:\n{}", entry.Print()));
 }

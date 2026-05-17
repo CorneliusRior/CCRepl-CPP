@@ -4,10 +4,10 @@ To create a REPL environment with CCRepl:
 1. Generate `CommandSets`.
 1. Create `ReplContext`.
 1. Assign functionality to the following `ReplContext` events:
-    - `ctx.ReqReadLine`
+    - `ctx.Write`
     - `ctx.ReqWriteLine`
     - `ctx.ReqReadLine`
-    - `ctx.ReqSetVaretVis` (optional)
+    - `ctx.ReqSetCaretVis` (optional)
     - `ctx.ReqWriteStatus` (optional)
     - `ctx.ReqClearStatus` (optional)
 1. Set up an input loop using `ctx.Execute()`, which runs as long as `ctx.running` is true.
@@ -15,14 +15,15 @@ To create a REPL environment with CCRepl:
 It is recommended that you include `BaseCommands`, which contains `help()` and other commands.
 A REPL environment with CCRepl can take any form so long as it contains `ReplContext` and functionality assigned to read and write events.
 
-## Minimal Console App
-Here is a minimal setup for a console application with a set of commands we call [`DataCommands`](##defining-command-sets):
+## Minimal Windows Console App
+Here is a minimal setup for a console application with a set of commands we call [`DataCommands`](#defining-command-sets):
 
 ```c++
 #include <iostream>
 #include <Windows.h>
 #include "ReplContext.h"
 #include "CommandSet.h"
+#include "DataCommands.h" // Your own command set.
 
 int main()
 {
