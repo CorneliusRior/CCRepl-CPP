@@ -26,4 +26,9 @@ namespace CCRepl {
 		BaseCommands();
 	};
 
+	class TestCommands : public CommandSet {
+	public:
+		TestCommands();
+	};
+
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include <future>
 #include <map>
 #include <typeindex>
 #include "CommandSet.h"
@@ -70,6 +71,28 @@ namespace CCRepl {
 
 		template <typename T>
 		std::shared_ptr<T> GetService() { return std::static_pointer_cast<T>(serviceMap_.at(typeid(T))); }
+
+		// Waiting:
+		template<typename T>
+		T WaitSpinner(std::future<T> ft, const std::string message = "Processing", const std::string doneMessage = "Done.") {
+			std::string msg = message.empty() ? "" : message + ' ';
+			const std::string frames[] = {
+				msg + '|',
+				msg + '/',
+				msg + '-',
+				msg + '\\',
+			};
+			int i = 0;
+
+			SetCaretVis(false);
+			while (ft.wait_for(std::chrono::milliseconds(100)) != std::future_status::ready)
+				WriteStatus(frames[i++ % 4]);
+
+			T r = ft.get();
+			ClearStatus(doneMessage);
+			SetCaretVis(true);
+			return r;
+		}
 
 	private:
 

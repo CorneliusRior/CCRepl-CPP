@@ -167,6 +167,7 @@
     <ClCompile Include="ReplCommand.cpp" />
     <ClCompile Include="ReplContext.cpp" />
     <ClCompile Include="Script.cpp" />
+    <ClCompile Include="TestCommands.cpp" />
     <ClCompile Include="Tokenizers.cpp" />
   </ItemGroup>
   <ItemGroup>

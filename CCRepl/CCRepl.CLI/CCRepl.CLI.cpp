@@ -2,6 +2,7 @@
 #include <iostream>
 #include <Windows.h>
 #include "ReplContext.h"
+#include "CommandSet.h"
 
 int main()
 {
@@ -10,8 +11,9 @@ int main()
 
     std::cout << "CCRepl CLI (C++).\nType 'help' to see commands, type 'exit' to quit.\n";
     CCRepl::BaseCommands base;
+    CCRepl::TestCommands test;
 
-    CCRepl::ReplContext ctx( &base );
+    CCRepl::ReplContext ctx( &base, &test );
 
     ctx.ReqReadLine = [](const std::string& prompt) {
         std::cout << prompt;
