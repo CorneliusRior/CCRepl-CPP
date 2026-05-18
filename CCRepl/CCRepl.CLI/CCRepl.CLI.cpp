@@ -4,17 +4,29 @@
 #include "ReplContext.h"
 #include "CommandSet.h"
 
+std::string about =  R"(CCRepl CLI (C++)
+2026, Cornelius Riordan.
+
+Type 'help' to see commands, type 'exit' to quit.
+
+This is a basic command-line interface for the CCRepl library, used for testing basic functions.
+CCRepl is a library for building REPL command environments. It is designed to make the construction of command systems as quick and easy as possible. It features a hierarchical command structure, automatic command registration, command argument parsing and validation, and built-in base commands including help functions, command testing functions, and scripting capabilities for the execution of multiple commands in sequence.
+
+For documentation and other information, see the CCRepl (C++) GitHub page: https://github.com/CorneliusRior/GG1.
+)";
+
 int main()
 {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
-    std::cout << "CCRepl CLI (C++).\nType 'help' to see commands, type 'exit' to quit.\n";
+    std::cout << "CCRepl CLI (C++).\nType 'help' to see commands, 'exit' to quit, 'about' for more info.\n";
     CCRepl::BaseCommands base;
     CCRepl::TestCommands test;
 
     CCRepl::ReplContext ctx( &base, &test );
-
+    
+    ctx.AboutStr = about;
     ctx.ReqReadLine = [](const std::string& prompt) {
         std::cout << prompt;
         std::string text;

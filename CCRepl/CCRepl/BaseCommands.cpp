@@ -14,6 +14,10 @@ namespace CCRepl {
 		ctx.WriteLine("Not yet implemented.");
 	}
 
+	CMD_H(About) {
+		ctx.WriteLine(ctx.AboutStr);
+	}
+
 	CMD_H(Help) {
 
 		// Create filtered map (shows all if string is empty):
@@ -312,6 +316,12 @@ namespace CCRepl {
 
 	BaseCommands::BaseCommands() {
 		Define(
+
+			Cmd("About")
+			.Aliases("abt", "info")
+			.Exec(About)
+			.Desc("Prints the 'about' statement.")
+			.LongDesc("Prints the 'about' statement, which can be set for each program.\nTo set the 'about' statement, assign the desired string to 'ReplContext::AboutStr' after construction."),
 
 			Cmd("Help")
 			.Aliases("h", "?")
