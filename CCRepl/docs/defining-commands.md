@@ -57,7 +57,7 @@ We can quickly define these like this:
 ```c++
 DataCommands::DataCommands() {
 	Define(		
-		Cmd("Data")
+		CCRepl::Cmd("Data")
 		.Children(
 			Cmd("Add"),
 			Cmd("Delete"),	

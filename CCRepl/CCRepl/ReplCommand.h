@@ -2,8 +2,8 @@
 
 #include "CommandArgs.h"
 
-#define CMD_H(name) static void name(ReplContext& ctx, CommandArgs& args)
-#define CMD_T(name) static bool name(ReplContext& ctx, CommandArgs& args)
+#define CMD_H(name) static void name(CCRepl::ReplContext& ctx, CCRepl::CommandArgs& args)
+#define CMD_T(name) static bool name(CCRepl::ReplContext& ctx, CCRepl::CommandArgs& args)
 
 namespace CCRepl {
 

@@ -83,9 +83,11 @@ int main()
 
 ## Defining Command Sets
 In the previous example, we use a CommandSet `DataCommands`, we will need to define this.
-In a header file (e.g. `CommandSets.h`[^CommandSet.h], create a class of type  `CommandSet`:
+In a header file (e.g. `CommandSets.h`[^CommandSet.h]), create a class of type  `CommandSet`:
 ```c++
-class DataCommands : public CommandSet {
+#include "CommandSet.h"
+
+class DataCommands : public CCRepl::CommandSet {
 public:
     DataCommands();
 };
