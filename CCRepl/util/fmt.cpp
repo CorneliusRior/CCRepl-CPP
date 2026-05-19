@@ -261,6 +261,7 @@ namespace fmt
 
 	TextTable& TextTable::operator<<(const std::vector<std::string>& item) {
 		AddItem(item);
+		return *this;
 	}
 
 	void TextTable::Validate() const {
