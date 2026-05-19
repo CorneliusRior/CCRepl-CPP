@@ -95,15 +95,18 @@ namespace fmt
 		TextTable(const std::vector<TextTableColumn>& columns, std::vector<std::vector<std::string>> items);
 
 		// Add items:
-		void AddItem(std::vector<std::string> item);
+		void AddItem(const std::vector<std::string>& item);
 		void AddItems(std::vector<std::vector<std::string>> items);
+		TextTable& operator<<(const std::vector<std::string>& item);
 
 		// Validation:	
-		void Validate();
-		void Validate(const std::vector<std::string>& item);
+		void Validate() const;
+		void Validate(const std::vector<std::string>& item) const;
 
 		// Output:
-		std::string PrintStr();
-		std::vector<std::string> Print();
+		std::string Print() const;
+		std::string PrintCompact(bool ascii = false) const;
+		std::vector<std::string> PrintVec() const;
 	};
+	std::ostream& operator<<(std::ostream& os, const TextTable& table);
 }

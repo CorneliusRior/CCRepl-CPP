@@ -250,7 +250,7 @@ namespace fmt
 	TextTable::TextTable(const std::vector<TextTableColumn>& columns) : Columns(columns) {}
 	TextTable::TextTable(const std::vector<TextTableColumn>& columns, std::vector<std::vector<std::string>> items) : Columns(columns), Items(std::move(items)) {}
 
-	void TextTable::AddItem(std::vector<std::string> item) {
+	void TextTable::AddItem(const std::vector<std::string>& item) {
 		Validate(item);
 		Items.push_back(item);
 	}
@@ -259,15 +259,19 @@ namespace fmt
 		for (std::vector<std::string> item : items) AddItem(item);
 	}
 
-	void TextTable::Validate() {
+	TextTable& TextTable::operator<<(const std::vector<std::string>& item) {
+		AddItem(item);
+	}
+
+	void TextTable::Validate() const {
 		for (std::vector<std::string> item : Items) Validate(item);
 	}
 
-	void TextTable::Validate(const std::vector<std::string>& item) {
+	void TextTable::Validate(const std::vector<std::string>& item) const {
 		if (item.size() != Columns.size()) throw std::runtime_error(std::format("Table and item line have different column amounts, must be identical. Columns.size() = '{}', item.size() = '{}'\n{}", Columns.size(), item.size(), str::PresentList(item, "Item: ", " | ")));
 	}
 
-	std::string TextTable::PrintStr() {
+	std::string TextTable::Print() const {
 		// Ensure data lines up:
 		Validate();
 
@@ -315,7 +319,74 @@ namespace fmt
 		return oss.str();
 	}
 
-	std::vector<std::string> TextTable::Print() {
+	std::string TextTable::PrintCompact(bool ascii) const {
+		Validate();
+		std::ostringstream oss;
+		if (ascii) {
+			// Draw Banner:
+			for (TextTableColumn c : Columns) {
+				oss << '|'<< AlignText(c.Header, c.HeaderAlignment, c.Width);
+			}
+			oss << "|\n";
+
+			// Draw Banner, bottom:
+			oss << '|';
+			for (std::size_t i = 0; i < Columns.size(); i++) {
+				oss << str::Repeat("-", Columns[i].Width) << '|';
+			}
+
+			// Draw each row:
+			for (std::vector<std::string> item : Items) {
+				oss << "\n|";
+				for (std::size_t i = 0; i < Columns.size(); i++) {
+					oss << AlignText(item[i], Columns[i].DataAlignment, Columns[i].Width)
+						<< '|';
+				}
+			}
+		}
+		else {
+			// Draw Banner, top:
+			oss << "┌";
+			for (int i = 0; i < Columns.size(); i++) {
+				oss << Columns[i].HLine;
+				if (i != Columns.size() - 1) oss << "┬";
+			}
+			oss << "┐" << std::endl;
+
+			// Draw Banner, headers:
+			for (TextTableColumn c : Columns) {
+				oss << "│" << AlignText(c.Header, c.HeaderAlignment, c.Width);
+			}
+			oss << "│" << std::endl;
+
+			// Draw Banner, bottom:
+			oss << "├";
+			for (int i = 0; i < Columns.size(); i++) {
+				oss << Columns[i].HLine;
+				if (i != Columns.size() - 1) oss << "┼";
+			}
+			oss << "┤" << std::endl;
+
+			// Draw each row:
+			for (std::vector<std::string> item : Items) {
+				for (int i = 0; i < Columns.size(); i++) {
+					oss << "│" << AlignText(item[i], Columns[i].DataAlignment, Columns[i].Width);
+				}
+				oss << "│" << std::endl;
+			}
+
+			// Draw bottom:
+			oss << "└";
+			for (int i = 0; i < Columns.size(); i++) {
+				oss << Columns[i].HLine;
+				if (i != Columns.size() - 1) oss << "┴";
+			}
+			oss << "┘";
+		}
+		return oss.str();
+	}
+
+	std::vector<std::string> TextTable::PrintVec() const{
 		// Ensure data lines up:
 		Validate();
 		std::vector<std::string> r;
@@ -371,5 +442,9 @@ namespace fmt
 		NewLine();
 
 		return r;
+	}
+
+	std::ostream& operator<<(std::ostream& os, const TextTable& table) {
+		return os << table.Print();
 	}
 }
