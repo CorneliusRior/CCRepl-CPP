@@ -21,7 +21,7 @@ namespace CCRepl {
 
 	CmdArg<std::tm> DtmArg(std::string name, ArgMode mode, std::optional<std::tm> fallback, std::string prompt, std::string retryPrompt, std::vector<std::string> cancelStrings) {
 		return CmdArg<std::tm>(name, parsers::TryTime, mode, fallback, prompt, retryPrompt, cancelStrings);
-	}
+	}	
 
 	CommandBuilder::CommandBuilder(std::string name) { _cmd.Name = std::move(name); }
 

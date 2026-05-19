@@ -41,6 +41,32 @@ namespace CCRepl {
 	CmdArg<std::string> StrArg(std::string name, ArgMode mode = ArgMode::Required, std::optional<std::string> fallback = std::nullopt, std::string prompt = "", std::string retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" });
 	CmdArg<std::tm> DtmArg(std::string name, ArgMode mode = ArgMode::Required, std::optional<std::tm> fallback = std::nullopt, std::string prompt = "", std::string retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" });
 
+	template<typename T>
+	class ArgBuilder {
+	private:
+
+		CmdArg<T> arg_;
+
+	public:
+		explicit ArgBuilder(std::string name, typename ArgSpec<T>::Parser parser) {
+			arg_.name = name;
+			arg_.parser = parser;
+		}
+
+		CmdArg<T> Build() { return std::move(arg_); }
+		ArgBuilder& Mode(ArgMode mode) { arg_.mode = mode; return *this; }
+		ArgBuilder& Fallback(std::optional<T> fallback) { arg_.fallback = fallback; return *this; }
+		ArgBuilder& Prompt(std::string prompt) { arg_.pmtInfo.prompt = prompt; return *this; }
+		ArgBuilder& RetryPrompt(std::string retryPrompt) { arg_.pmtInfo.retryPrompt = retryPrompt; return *this; }
+		ArgBuilder& TypeStr(std::optional<std::string> typeStr) { arg_.typeString = typeStr; return *this; }
+
+		template<typename... Cst>
+		ArgBuilder& CancelStrings(Cst&&... cstrs) {
+			(arg_.pmtInfo.cancelStrings.push_back(std::forward<Cst>(cstrs)), ...);
+			return *this;
+		}
+	};
+
 	class CommandBuilder {
 	private:
 
