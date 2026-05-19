@@ -59,7 +59,7 @@ namespace CCRepl {
 			oss << "Enter value for " 
 				<< Name 
 				<< (IsRequired(Mode) ? " (required, " : " (optional, ") 
-				<< TypeString() << "): ";
+				<< TypeString << "): ";
 			PmtInfo.prompt = oss.str();
 		}
 		if (PmtInfo.retryPrompt.empty()) {

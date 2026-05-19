@@ -321,7 +321,8 @@ namespace CCRepl {
 			.Aliases("abt", "info")
 			.Exec(About)
 			.Desc("Prints the 'about' statement.")
-			.LongDesc("Prints the 'about' statement, which can be set for each program.\nTo set the 'about' statement, assign the desired string to 'ReplContext::AboutStr' after construction."),
+			.LongDesc("Prints the 'about' statement, which can be set for each program.\nTo set the 'about' statement, assign the desired string to 'ReplContext::AboutStr' after construction.")
+			.Group("Base"),
 
 			Cmd("Help")
 			.Aliases("h", "?")

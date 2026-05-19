@@ -124,15 +124,15 @@ DataCommands::DataCommands() {
 		.Children(
 			Cmd("Add")
 			.Args(
-				StrArg("Name", ArgMode::RequiredPrompt),
-				IntArg("Age", ArgMode::OptionalPrompt, std::nullopt)
+				CCRepl::StrArg("Name", CCRepl::ArgMode::RequiredPrompt),
+				CCRepl::IntArg("Age", CCRepl::ArgMode::OptionalPrompt, std::nullopt)
 			),
 
 			Cmd("Delete")
-			.Args(IntArg("Id", ArgMode::RequiredPrompt),
+			.Args(CCRepl::IntArg("Id", CCRepl::ArgMode::RequiredPrompt),
 
 			Cmd("Edit")
-			.Args(IntArg("Id", ArgMode::RequiredPrompt)
+			.Args(CCRepl::IntArg("Id", CCRepl::ArgMode::RequiredPrompt)
 
 		)
 	);
@@ -158,8 +158,8 @@ DataCommands::DataCommands() {
 			.Exec(AddHandler)
 			.Test(AddTest)			
 			.Args(
-				StrArg("Name", ArgMode::RequiredPrompt),
-				IntArg("Age", ArgMode::OptionalPrompt, std::nullopt)
+				CCRepl::StrArg("Name", ArgMode::RequiredPrompt),
+				CCRepl::IntArg("Age", ArgMode::OptionalPrompt, std::nullopt)
 			)
 			.Options("-q")
 			.Desc("Adds item to database.")
@@ -171,7 +171,7 @@ DataCommands::DataCommands() {
 			.Aliases("-", "d", "del", "rm", "remove")
 			.Exec(DeleteHandler)
 			.Test(DeleteTest)
-			.Args(IntArg("Id", ArgMode::RequiredPrompt)
+			.Args(CCRepl::IntArg("Id", CCRepl::ArgMode::RequiredPrompt))
 			.Options("-f", "-q")
 			.Desc("Deletes item from database.")
 			.LongDesc("Deletes an item from the database. Uses (Y/N) confirmation beforehand. Command behaviour can be altered by options:\n * '-f' ('force'): Bypasses (Y/N) confirmation.\n * '-q' ('quiet'): Deletes without printing entry.")
@@ -182,7 +182,7 @@ DataCommands::DataCommands() {
 			.Aliases("e", "edt", "update", "updt")
 			.Exec(EditHandler)
 			.Test(EditTest)
-			.Args(IntArg("Id", ArgMode::RequiredPrompt)
+			.Args(CCRepl::IntArg("Id", CCRepl::ArgMode::RequiredPrompt))
 			.Options("-f", "-q")
 			.Mode(0)
 			.Desc("Edits item in database.")
@@ -196,8 +196,8 @@ DataCommands::DataCommands() {
 				.Exec(EditHandler)
 				.Test(EditTest)
 				.Args(
-					IntArg("Id", ArgMode::RequiredPrompt),
-					StrArg("New Name", ArgMode::RequiredPrompt)
+					CCRepl::IntArg("Id", CCRepl::ArgMode::RequiredPrompt),
+					CCRepl::StrArg("New Name", CCRepl::ArgMode::RequiredPrompt)
 				)
 				.Options("-f", "-q")
 				.Mode(1)
@@ -211,8 +211,8 @@ DataCommands::DataCommands() {
 				.Exec(EditHandler)
 				.Test(EditTest)
 				.Args(
-					IntArg("Id", ArgMode::RequiredPrompt),
-					IntArg("New Age", ArgMode::RequiredPrompt)
+					CCRepl::IntArg("Id", CCRepl::ArgMode::RequiredPrompt),
+					CCRepl::IntArg("New Age", CCRepl::ArgMode::RequiredPrompt)
 				)
 				.Options("-f", "-q")
 				.Mode(2)
@@ -221,7 +221,7 @@ DataCommands::DataCommands() {
 				.Examples("Data.Edit.Age(1, 20)", "d.e.a(27, 50) -f -q", "dta.updt.age")
 				.Group("Data")
 			)
-
+			
 		)
 	);
 }

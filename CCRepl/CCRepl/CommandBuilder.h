@@ -15,6 +15,7 @@ namespace CCRepl {
 		ArgMode mode = ArgMode::Required;
 		std::optional<T> fallback = std::nullopt;
 		PromptInfo pmtInfo;
+		std::optional<std::string> typeString;
 
 		CmdArg(
 			std::string name,
@@ -23,9 +24,10 @@ namespace CCRepl {
 			std::optional<T> fallback = std::nullopt,
 			std::string prompt = "",
 			std::string retryPrompt = "",
-			std::vector<std::string> cancelStrings = { "\\" }
+			std::vector<std::string> cancelStrings = { "\\" },
+			std::optional<std::string> typeString = std::nullopt
 		) : 
-			name(name), parser(parser), mode(mode), fallback(fallback) {
+			name(name), parser(parser), mode(mode), fallback(fallback), typeString(typeString) {
 			pmtInfo = PromptInfo{ prompt, retryPrompt, cancelStrings };
 		}
 
@@ -64,7 +66,8 @@ namespace CCRepl {
 					spec.mode,
 					std::move(spec.parser),
 					std::move(spec.fallback),
-					std::move(spec.pmtInfo)
+					std::move(spec.pmtInfo),
+					std::move(spec.typeString)
 				)
 			);
 		}

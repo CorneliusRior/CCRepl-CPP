@@ -57,11 +57,12 @@ namespace CCRepl {
 	public:
 		virtual ~IArgSpec() = default;
 		std::string Name = "";
+		std::string TypeString = "";
 		ArgMode Mode = ArgMode::Required;
 		PromptInfo PmtInfo = { "", "", { "\\" } };
 		virtual std::unique_ptr<IArgValue> Parse(const std::string& text) const = 0;
 		virtual std::unique_ptr<IArgValue> Fallback() const = 0;
-		virtual std::string TypeString() const = 0;
+		//virtual std::string TypeString() const = 0;
 		virtual std::string Print() const = 0;
 
 	protected:
@@ -74,11 +75,12 @@ namespace CCRepl {
 		using Parser = std::function<bool(const std::string&, T&)>;
 
 		// Constructor:
-		ArgSpec(std::string name, ArgMode mode, Parser parser, std::optional<T> fallback, PromptInfo pmtInfo) :
+		ArgSpec(std::string name, ArgMode mode, Parser parser, std::optional<T> fallback, PromptInfo pmtInfo, std::optional<std::string> typeString = std::nullopt) :
 			parser_(std::move(parser)), fallback_(std::move(fallback)) {
 			Name = std::move(name);
 			Mode = mode;
 			PmtInfo = pmtInfo;
+			TypeString = typeString.value_or(str::TypeString<T>());
 
 			if (IsPrompt(Mode)) GeneratePrompt();
 		}
@@ -93,11 +95,11 @@ namespace CCRepl {
 			return std::make_unique<ArgValue<T>>(fallback_);
 		}
 
-		std::string TypeString() const override { return str::TypeString<T>(); }
+		//std::string TypeString() const override { return str::TypeString<T>(); }
 
 		std::string Print() const override {
 			std::ostringstream oss;
-			oss << ArgModeOpen(Mode) << TypeString() << ' ' << Name << ArgModeClose(Mode);
+			oss << ArgModeOpen(Mode) << TypeString << ' ' << Name << ArgModeClose(Mode);
 			return oss.str();
 		}
 	
