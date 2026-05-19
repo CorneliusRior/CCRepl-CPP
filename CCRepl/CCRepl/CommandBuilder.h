@@ -17,6 +17,7 @@ namespace CCRepl {
 		PromptInfo pmtInfo;
 		std::optional<std::string> typeString;
 
+		CmdArg() = default;
 		CmdArg(
 			std::string name,
 			typename ArgSpec<T>::Parser parser,
