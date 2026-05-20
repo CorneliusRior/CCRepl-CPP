@@ -54,7 +54,7 @@ namespace str {
     std::vector<std::string> Wrap(const std::string& text, std::size_t w, bool pad = false);
     std::vector<std::string> ToIndexLineV(const std::string& index, const std::string& value, std::size_t col, std::size_t total, bool oneline = true);
 
-    std::string ToString(const double value, std::size_t prec = 1);
+    std::string ToString(const double value, std::size_t prec = 1, bool compact = false);
 
     // Time Functions:
     std::string ToString(const std::tm& time);

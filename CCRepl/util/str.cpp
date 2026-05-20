@@ -409,7 +409,20 @@ namespace str {
 		return AppendStringVectors(k, v);
 	}
 
-	std::string ToString(double value, std::size_t prec) {
+	std::string ToString(double value, std::size_t prec, bool compact) {
+		if (compact) {
+			const double abs_val = std::abs(value);
+			const char* sign = value < 0 ? "-" : "";
+
+			auto compress = [&abs_val, &sign, &prec](double q, char u) {
+				if (abs_val >= q) return std::format("{}{:.{}f}{}", sign, abs_val / q, prec, u);
+				};
+			if (abs_val >= 1e12) return compress(1e15, 'Q');
+			if (abs_val >= 1e12) return compress(1e12, 'T');
+			if (abs_val >= 1e9) return compress(1e12, 'B');
+			if (abs_val >= 1e6) return compress(1e12, 'M');
+			if (abs_val >= 1e3) return compress(1e12, 'K');
+		}
 		std::ostringstream oss;
 		oss << std::fixed << std::setprecision(prec) << value;
 		return oss.str();
