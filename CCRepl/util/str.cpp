@@ -415,7 +415,7 @@ namespace str {
 			const char* sign = value < 0 ? "-" : "";
 
 			auto compress = [&abs_val, &sign, &prec](double q, char u) {
-				if (abs_val >= q) return std::format("{}{:.{}f}{}", sign, abs_val / q, prec, u);
+				return std::format("{}{:.{}f}{}", sign, abs_val / q, prec, u);
 				};
 			if (abs_val >= 1e12) return compress(1e15, 'Q');
 			if (abs_val >= 1e12) return compress(1e12, 'T');
