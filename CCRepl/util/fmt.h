@@ -87,7 +87,7 @@ namespace fmt
 	};
 
 	struct TextTable {
-		const std::vector<TextTableColumn>& Columns;
+		std::vector<TextTableColumn> Columns;
 		std::vector<std::vector<std::string>> Items;
 
 		// Constructors:
