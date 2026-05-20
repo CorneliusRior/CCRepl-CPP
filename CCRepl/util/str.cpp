@@ -417,11 +417,11 @@ namespace str {
 			auto compress = [&abs_val, &sign, &prec](double q, char u) {
 				return std::format("{}{:.{}f}{}", sign, abs_val / q, prec, u);
 				};
-			if (abs_val >= 1e12) return compress(1e15, 'Q');
+			if (abs_val >= 1e15) return compress(1e15, 'Q');
 			if (abs_val >= 1e12) return compress(1e12, 'T');
-			if (abs_val >= 1e9) return compress(1e12, 'B');
-			if (abs_val >= 1e6) return compress(1e12, 'M');
-			if (abs_val >= 1e3) return compress(1e12, 'K');
+			if (abs_val >= 1e9) return compress(1e9, 'B');
+			if (abs_val >= 1e6) return compress(1e6, 'M');
+			if (abs_val >= 1e3) return compress(1e3, 'K');
 		}
 		std::ostringstream oss;
 		oss << std::fixed << std::setprecision(prec) << value;
