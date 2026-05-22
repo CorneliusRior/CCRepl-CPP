@@ -5,6 +5,13 @@
 
 namespace CCRepl {
 
+	std::size_t CommandArgs::GetIdByName(const std::string& name) const {
+		for (std::size_t i = 0; i < Cmd->ArgSpecs.size(); i++) {
+			if (Cmd->ArgSpecs[i]->Name == name) return i;
+		}
+		throw ReplException(std::format("No argument with name '{}'", name));
+	}
+
 	CommandArgs::CommandArgs(ReplContext& ctx, ReplCommand* cmd, const std::vector<std::string> args, const std::vector<std::string> opt) {
 
 		Cmd = cmd;

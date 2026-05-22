@@ -9,6 +9,8 @@ namespace CCRepl {
 
 	// Generated whenever a command is called.
 	class CommandArgs {
+	private: 
+		std::size_t GetIdByName(const std::string& name) const;
 	public:
 
 		std::vector<std::unique_ptr<IArgValue>> Args;
@@ -112,6 +114,26 @@ namespace CCRepl {
 		template<typename T>
 		T GetR(std::size_t pos) const {
 			return GetRequired<T>(pos);
+		}
+
+		template<typename T>
+		std::optional<T> Get(const std::string& name) const {
+			return Get<T>(GetIdByName(name));
+		}
+
+		template<typename T>
+		T GetOr(const std::string& name, T fallback) const {
+			return GetOr<T>(GetIdByName(name), fallback);
+		}
+
+		template<typename T>
+		T GetRequired(const std::string& name) const {
+			return GetRequired<T>(GetIdByName(name));
+		}
+
+		template<typename T>
+		T GetR(const std::string& name) const {
+			return GetRequired<T>(GetIdByName(name));
 		}
 	};
 

@@ -75,6 +75,19 @@ namespace CCRepl {
 		ctx.WriteLine("\nDone.");
 	}
 
+	CMD_H(GetByName) {
+		ctx.WriteLine("Testing Get() 'by name' overrides (name instead of id). Case sensitive.");
+
+		int argA = args.GetR<int>("argA");
+		int argB = args.GetOr<int>("argB", 10);
+		std::optional<int> argC = args.Get<int>("argC");
+
+		ctx.WriteLine(STR_VAR_DEF(argA));
+		ctx.WriteLine(STR_VAR_DEF(argB));
+		ctx.Write("argC = ");
+		ctx.WriteLine(argC ? str::ToString(*argC) : "Undefined");
+	}
+
 	TestCommands::TestCommands() {
 		Define(
 
@@ -100,6 +113,15 @@ namespace CCRepl {
 				.Args(
 					SztArg("Start", ArgMode::Optional, 1),
 					SztArg("StarEnd", ArgMode::Optional, 1)
+				)
+				.Group("Test"),
+
+				Cmd("GetByName")
+				.Exec(GetByName)
+				.Args(
+					IntArg("argA", ArgMode::Required),
+					IntArg("argB", ArgMode::Optional),
+					IntArg("argC", ArgMode::Optional)
 				)
 				.Group("Test")
 
