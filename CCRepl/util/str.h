@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <chrono>
 #include <format>
+#include <functional>
 #include <fstream>
 #include <unordered_set>
 #include <sstream>
@@ -68,6 +69,51 @@ namespace str {
 
     std::vector<std::string> SepArgNames(std::string argNames);
 
+    /// <summary>
+    /// TruncateList: prints the first 'start' items and the last 'end' items, trunating. Used for displaying large amounts of data.
+    /// This is for types which can be fed into ostream directly (os << item).
+    /// </summary>
+    /// <typeparam name="Itm">Item type, which can be directly fed into ostream without conversion.</typeparam>
+    /// <param name="items">Vector of items to display.</param>
+    /// <param name="itemName">Plural name of individual items used to print amount.</param>
+    /// <param name="start">Number of items to display at the start (default = 1).</param>
+    /// <param name="end">Number of items to display at the end (default = 1).</param>
+    /// <returns></returns>
+    template<typename Itm>
+    std::string TruncateList(const std::vector<Itm>& items, std::string itemName, std::size_t start = 1, std::size_t end = 1) {
+        std::ostringstream oss;
+        if (items.size() < start + end + 3) for (const Itm& item : items) oss << item << '\n';
+        else {
+            for (std::size_t i = 0; i < start; i++) oss << items[i] << '\n';
+            oss << "…\n(" << items.size() << " total " << itemName << ")\n…";
+            for (std::size_t i = items.size() - end; i < items.size(); i++) oss << '\n' << items[i];
+        }
+        return oss.str();
+    }
+
+    /// <summary>
+    /// TruncateList: prints the first 'start' items and the last 'end' items, trunating. Used for displaying large amounts of data.
+    /// For types which require conversion into string.
+    /// </summary>
+    /// <typeparam name="Itm">Item type.</typeparam>
+    /// <param name="items">Vector of items to display.</param>
+    /// <param name="toStringFunc">Function which returns string from const Itm&.</param>
+    /// <param name="itemName">Plural name of individual items used to print amount.</param>
+    /// <param name="start">Number of items to display at the start (default = 1).</param>
+    /// <param name="end">Number of items to display at the end (default = 1).</param>
+    /// <returns></returns>
+    template<typename Itm>
+    std::string TruncateList(const std::vector<Itm>& items, std::function<std::string(const Itm&)> toStringFunc, std::string itemName, std::size_t start = 1, std::size_t end = 1) {
+        std::ostringstream oss;
+        if (items.size() < start + end + 3) for (const Itm& item : items) oss << toStringFunc(item) << '\n';
+        else {
+            for (std::size_t i = 0; i < start; i++) oss << toStringFunc(items[i]) << '\n';
+            oss << "…\n(" << items.size() << " total " << itemName << ")\n…";
+            for (std::size_t i = items.size() - end; i < items.size(); i++) oss << '\n' << toStringFunc(items[i]);
+        }
+        return oss.str();
+    }
+
     template<typename... Args>
     std::string FuncLog(std::string file, int line, std::string functionName, std::string argNames, Args&&... args) {
         std::ostringstream oss;
@@ -122,7 +168,7 @@ namespace str {
 
     template<>
     inline std::string TypeString<std::string>() { return "string"; }
-
+    
     template<>
     inline std::string TypeString<std::tm>() { return "time"; }
 }

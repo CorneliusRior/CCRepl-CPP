@@ -108,6 +108,11 @@ namespace CCRepl {
 			if (!value) throw ReplException(std::format("Required value not present. pos = '{}', in command '{}'.", pos, CommandAddress));
 			return *value;
 		}
+
+		template<typename T>
+		T GetR(std::size_t pos) const {
+			return GetRequired<T>(pos);
+		}
 	};
 
 }
