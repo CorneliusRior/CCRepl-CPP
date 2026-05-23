@@ -245,10 +245,25 @@ namespace fmt
 	// TextTable stuff:
 
 	TextTableColumn::TextTableColumn(std::string header, size_t width, TextAlign headerAln, TextAlign dataAln) :
-		Header(std::move(header)), Width(std::move(width)), HeaderAlignment(std::move(headerAln)), DataAlignment(std::move(dataAln)) { HLine = str::Repeat("─", Width); }
+		Header(std::move(header)), Width(std::move(width)), HeaderAlignment(std::move(headerAln)), DataAlignment(std::move(dataAln)) { HLine = str::Repeat("─", Width); HLineAscii = str::Repeat("-", Width); }
 
 	TextTable::TextTable(const std::vector<TextTableColumn>& columns) : Columns(columns) {}
 	TextTable::TextTable(const std::vector<TextTableColumn>& columns, std::vector<std::vector<std::string>> items) : Columns(columns), Items(std::move(items)) {}
+
+	TextTable& TextTable::AddColumnLeft(std::string header, std::size_t width, TextAlign headerAlignment) {
+		Columns.push_back(TextTableColumn(header, width, headerAlignment, TextAlign::Left));
+		return *this;
+	}
+
+	TextTable& TextTable::AddColumnRight(std::string header, std::size_t width, TextAlign headerAlignment) {
+		Columns.push_back(TextTableColumn(header, width, headerAlignment, TextAlign::Right));
+		return *this;
+	}
+
+	TextTable& TextTable::AddColumnCenter(std::string header, std::size_t width, TextAlign headerAlignment) {
+		Columns.push_back(TextTableColumn(header, width, headerAlignment, TextAlign::Center));
+		return *this;
+	}
 
 	void TextTable::AddItem(const std::vector<std::string>& item) {
 		Validate(item);
@@ -272,50 +287,70 @@ namespace fmt
 		if (item.size() != Columns.size()) throw std::runtime_error(std::format("Table and item line have different column amounts, must be identical. Columns.size() = '{}', item.size() = '{}'\n{}", Columns.size(), item.size(), str::PresentList(item, "Item: ", " | ")));
 	}
 
-	std::string TextTable::Print() const {
+	std::string TextTable::Print(bool ascii) const {
 		// Ensure data lines up:
 		Validate();
 
 		std::ostringstream oss;
 
-		// Draw Banner, top:
-		oss << "┌";
-		for (int i = 0; i < Columns.size(); i++) {
-			oss << Columns[i].HLine;
-			if (i != Columns.size() - 1) oss << "┬";
-		}
-		oss << "┐" << std::endl;
+		if (ascii) {
+			// Draw top/row separator:
+			for (const TextTableColumn& c : Columns) oss << '|' << c.HLineAscii;
+			oss << '|';
+			std::string rowSep = oss.str();	// Just so happens it's in the first row, so we can keep it like that.
 
-		// Draw Banner, headers:
-		for (TextTableColumn c : Columns) {
-			oss << "│" << AlignText(c.Header, c.HeaderAlignment, c.Width);
-		}
-		oss << "│" << std::endl;
+			// Draw Header:
+			oss << '\n';
+			for (const TextTableColumn& c : Columns) oss << '|' << AlignText(c.Header, c.HeaderAlignment, c.Width, "-");
+			oss << '|';
 
-		// Draw each row (item):
-		for (std::vector<std::string> item : Items) {
-			// Draw top:
-			oss << "├";
+			for (const std::vector<std::string>& row : Items) {
+				oss << '\n' << rowSep << '\n';
+				for (std::size_t i = 0; i < Columns.size(); i++) oss << '|' << AlignText(row[i], Columns[i].DataAlignment, Columns[i].Width);
+				oss << '|';
+			}
+			oss << '\n' << rowSep;
+		}
+		else {
+			// Draw Banner, top:
+			oss << "┌";
 			for (int i = 0; i < Columns.size(); i++) {
 				oss << Columns[i].HLine;
-				if (i != Columns.size() - 1) oss << "┼";
+				if (i != Columns.size() - 1) oss << "┬";
 			}
-			oss << "┤" << std::endl;
+			oss << "┐" << std::endl;
 
-			// Draw data:
-			for (int i = 0; i < Columns.size(); i++) {
-				oss << "│" << AlignText(item[i], Columns[i].DataAlignment, Columns[i].Width);
+			// Draw Banner, headers:
+			for (TextTableColumn c : Columns) {
+				oss << "│" << AlignText(c.Header, c.HeaderAlignment, c.Width);
 			}
 			oss << "│" << std::endl;
-		}
 
-		// Draw bottom:
-		oss << "└";
-		for (int i = 0; i < Columns.size(); i++) {
-			oss << Columns[i].HLine;
-			if (i != Columns.size() - 1) oss << "┴";
+			// Draw each row (item):
+			for (std::vector<std::string> item : Items) {
+				// Draw top:
+				oss << "├";
+				for (int i = 0; i < Columns.size(); i++) {
+					oss << Columns[i].HLine;
+					if (i != Columns.size() - 1) oss << "┼";
+				}
+				oss << "┤" << std::endl;
+
+				// Draw data:
+				for (int i = 0; i < Columns.size(); i++) {
+					oss << "│" << AlignText(item[i], Columns[i].DataAlignment, Columns[i].Width);
+				}
+				oss << "│" << std::endl;
+			}
+
+			// Draw bottom:
+			oss << "└";
+			for (int i = 0; i < Columns.size(); i++) {
+				oss << Columns[i].HLine;
+				if (i != Columns.size() - 1) oss << "┴";
+			}
+			oss << "┘";
 		}
-		oss << "┘";
 
 		return oss.str();
 	}
@@ -326,14 +361,14 @@ namespace fmt
 		if (ascii) {
 			// Draw Banner:
 			for (TextTableColumn c : Columns) {
-				oss << '|'<< AlignText(c.Header, c.HeaderAlignment, c.Width);
+				oss << '|'<< AlignText(c.Header, c.HeaderAlignment, c.Width, "-");
 			}
 			oss << "|\n";
 
 			// Draw Banner, bottom:
 			oss << '|';
 			for (std::size_t i = 0; i < Columns.size(); i++) {
-				oss << str::Repeat("-", Columns[i].Width) << '|';
+				oss << Columns[i].HLineAscii << '|';
 			}
 
 			// Draw each row:

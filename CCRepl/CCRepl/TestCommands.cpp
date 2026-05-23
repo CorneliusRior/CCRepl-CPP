@@ -75,6 +75,98 @@ namespace CCRepl {
 		ctx.WriteLine("\nDone.");
 	}
 
+	CMD_H(BuildTable) {
+		int n = args.GetR<int>(0);
+		ctx.WriteLine("Testing fmt::BuildTable()");
+
+		struct TestItem {
+			int id;
+			double value;
+			std::string tag;
+			static std::vector<fmt::TextTableColumn> GetTableColumns() {
+				return {
+					fmt::TextTableColumn("Id:", 5),
+					fmt::TextTableColumn("Value:", 6, fmt::TextAlign::Left, fmt::TextAlign::Right),
+					fmt::TextTableColumn("Tag:", 6)
+				};
+			}
+			std::vector<std::string> GetTableRow() const {
+				return {
+					std::to_string(id),
+					str::ToString(value, 1),
+					tag
+				};
+			}
+		};
+
+		std::vector<TestItem> itemVec;
+		for (std::size_t i = 1; i < 101; i++) {
+			itemVec.push_back({ (int)i, i * 1.5, i % 2 == 0 ? "even" : "odd" });
+		}
+
+		struct TestItemConvert {
+			int id;
+			double value;
+			std::string tag;
+		};
+
+		std::vector<TestItemConvert> convTtemVec;
+		for (std::size_t i = 1; i < 101; i++) {
+			convTtemVec.push_back({ (int)i, i * 1.5, i % 2 == 0 ? "even" : "odd" });
+		}
+
+		// Do tests here:
+
+		ctx.WriteLine("\nDirect, compact, ascii = false:\n");
+		ctx.WriteLine(fmt::BuildTable(itemVec, n, true, false));
+
+		ctx.WriteLine("\nDirect, compact, ascii = true:\n");
+		ctx.WriteLine(fmt::BuildTable(itemVec, n, true, true));
+
+		ctx.WriteLine("\nDirect, not compact, ascii = false:\n");
+		ctx.WriteLine(fmt::BuildTable(itemVec, n, false, false));
+
+		ctx.WriteLine("\nDirect, not compact, ascii = true:\n");
+		ctx.WriteLine(fmt::BuildTable(itemVec, n, false, true));
+
+		std::vector<fmt::TextTableColumn> columns{
+			fmt::TextTableColumn("Id:", 5),
+			fmt::TextTableColumn("Value:", 6, fmt::TextAlign::Left, fmt::TextAlign::Right),
+			fmt::TextTableColumn("Tag:", 6)
+		};
+
+		auto Convert = [](const TestItemConvert& row) {
+			std::vector<std::string> r{
+				std::to_string(row.id),
+				str::ToString(row.value, 1),
+				row.tag
+			};
+			return r;
+			};
+
+		ctx.WriteLine("\n------------------------------\n");
+
+		ctx.WriteLine("\nConvert, compact, ascii = false:\n");
+		ctx.WriteLine(fmt::BuildTable<TestItemConvert>(convTtemVec, columns, Convert, n, true, false));
+
+		ctx.WriteLine("\nConvert, compact, ascii = true:\n");
+		ctx.WriteLine(fmt::BuildTable<TestItemConvert>(convTtemVec, columns, Convert, n, true, true));
+
+		ctx.WriteLine("\nConvert, not compact, ascii = false:\n");
+		ctx.WriteLine(fmt::BuildTable<TestItemConvert>(convTtemVec, columns, Convert, n, false, false));
+
+		ctx.WriteLine("\nConvert, not compact, ascii = true:\n");
+		ctx.WriteLine(fmt::BuildTable<TestItemConvert>(convTtemVec, columns, Convert, n, false, true));
+
+		ctx.WriteLine("\n------------------------------\n");
+
+		ctx.WriteLine("\nTest Add Column functions:\n");
+		fmt::TextTable t;
+		t.AddColumnLeft("Id").AddColumnRight("Value").AddColumnCenter("Tag:");
+		for (const TestItem& i : itemVec) t << i.GetTableRow();
+		ctx.WriteLine(t.PrintCompact(false));
+	}
+
 	CMD_H(GetByName) {
 		ctx.WriteLine("Testing Get() 'by name' overrides (name instead of id). Case sensitive.");
 
@@ -116,6 +208,12 @@ namespace CCRepl {
 				)
 				.Group("Test"),
 
+				Cmd("BuildTable")
+				.Exec(BuildTable)
+				.Args(IntArg("N", ArgMode::Optional, 10))
+				.Desc("Test fmt::BuildTable in different configurations.")
+				.Group("Test"),
+
 				Cmd("GetByName")
 				.Exec(GetByName)
 				.Args(
@@ -123,7 +221,7 @@ namespace CCRepl {
 					IntArg("argB", ArgMode::Optional),
 					IntArg("argC", ArgMode::Optional)
 				)
-				.Group("Test")
+				.Group("Test")				
 
 			)
 
