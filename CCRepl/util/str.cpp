@@ -260,8 +260,15 @@ namespace str {
 	}
 
 	std::string ToCheckBox(const bool v) {
-		if (v) return "[x]";
-		return "[ ]";
+		return v ? "[x]" : "[ ]";
+	}
+
+	std::string Pct(const double num, const double denom, std::size_t prec) {
+		return ToString((num / denom) * 100, prec) + "%";
+	}
+
+	std::string AsPct(const double num, std::size_t prec) {
+		return ToString(num * 100, prec) + "%";
 	}
 
 	// Vector functions:

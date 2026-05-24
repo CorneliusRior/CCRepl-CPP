@@ -439,7 +439,6 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.LongDesc("Parses and tests a script by file path. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-p' ('print'): Prints more information when parsing.")
 				.Examples("Script.Test()", "Script.Test(C:\\Users\\User\\Desktop\\Script.txt)")
 				.Group("Test")
-				.WIP()
 
 			),
 
