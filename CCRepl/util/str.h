@@ -10,12 +10,11 @@
 #include <vector>
 
 #define STR_P(...) do { \
-    std::ostringstream oss; \
     std::string file = __FILE__; \
-    oss << '(' << file.substr(file.find_last_of('\\') + 1) << " line " << __LINE__ << ", in " << __func__ << "()): "; \
-    bool first = true; \
-    ((oss << (first ? "" : ", ") << __VA_ARGS__, first = false), ...); \
-    str::p(oss.str()); \
+    std::string loc = "(" + file.substr(file.find_last_of('\\') + 1) \
+        + " line " + std::to_string(__LINE__) \
+        + ", in " + __func__ + "()): "; \
+    str::PrintArgs(loc, __VA_ARGS__); \
 } while (0)
 
 #define STR_PRINT_V(vec) \
@@ -189,6 +188,15 @@ namespace str {
             for (std::size_t i = items.size() - end; i < items.size(); i++) oss << '\n' << toStringFunc(items[i]);
         }
         return oss.str();
+    }
+
+    template<typename... Args>
+    void PrintArgs(const std::string& location, const Args&... args) {
+        std::ostringstream oss;
+        oss << location;
+        bool first = true;
+        ((oss << (first ? "" : ", ") << args, first = false), ...);
+        str::p(oss.str());
     }
 
     template<typename... Args>

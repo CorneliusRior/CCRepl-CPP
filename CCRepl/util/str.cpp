@@ -157,7 +157,7 @@ namespace str {
 	}
 
 	std::string Truncate(const std::string& text, std::size_t w, const std::string& truncateString) {
-		std::string r = ToSingleLine(text);
+		std::string r = ToSingleLine(text, false);
 		std::size_t len = StrLength(r);
 		if (w >= len) return r;
 		size_t tl = StrLength(truncateString);
