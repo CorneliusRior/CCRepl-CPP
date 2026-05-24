@@ -259,6 +259,11 @@ namespace str {
 		return oss.str();
 	}
 
+	std::string ToCheckBox(const bool v) {
+		if (v) return "[x]";
+		return "[ ]";
+	}
+
 	// Vector functions:
 	
 	std::size_t MaxLength(const std::vector<std::string>& vec) {
@@ -271,6 +276,11 @@ namespace str {
 			)
 		);
 		return r;
+	}
+
+	std::size_t MaxLength(const std::string& text) {
+		std::vector<std::string> vec = SplitBy(text, '\n');
+		return MaxLength(vec);
 	}
 
 	bool InVector(const std::string& text, const std::vector<std::string>& vec, bool caseSensitive) {

@@ -107,14 +107,19 @@ namespace CCRepl {
 		else throw ReplException("ReqReadLine not set.");
 	}
 
-	std::string ReplContext::RootTree() {
-		std::ostringstream oss;
-		oss << "[Root]\n";
-		for (std::size_t i = 0; i < RootCommands.size(); i++) {
-			if (i == RootCommands.size() - 1) oss << RootCommands[i]->PrintTree(" └─", "   ");
-			else oss << RootCommands[i]->PrintTree(" ├─", " │ ");
-		}
-		return oss.str();
+	std::string ReplContext::RootTree(HelpAttribute att, std::size_t total) {
+		auto GenerateTree = [&](HelpAttribute a, std::size_t col = 50) {
+			std::ostringstream oss;
+			oss << "[Root]\n";
+			for (std::size_t i = 0; i < RootCommands.size(); i++) {
+				if (i == RootCommands.size() - 1) oss << RootCommands[i]->PrintTree(" └─", "   ", a, col, total);
+				else oss << RootCommands[i]->PrintTree(" ├─", " │ ", a, col, total);
+			}
+			return oss.str();
+			};
+		std::string emptyTree = GenerateTree(HelpAttribute::None);
+		if (att == HelpAttribute::None) return emptyTree;
+		return GenerateTree(att, str::MaxLength(emptyTree) + 5);		
 	}
 
 	bool ReplContext::Confirm(const std::string& prompt, const std::string& retryPrompt) {

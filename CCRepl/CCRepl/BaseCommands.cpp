@@ -46,14 +46,15 @@ namespace CCRepl {
 		}
 
 		HelpAttribute att;
-		int attMode = args.FirstOptionStart("-a", "-d", "-e", "-f", "-l", "-u");
+		int attMode = args.FirstOptionStart("-a", "-d", "-e", "-f", "-i", "-l", "-u");
 		switch (attMode) {
 		case 0:		att = HelpAttribute::Aliases;			 olDefault = true;	break;
 		case 1:		att = HelpAttribute::Description;		 olDefault = true;	break;
 		case 2:		att = HelpAttribute::Examples;			 olDefault = false;	break;
 		case 3:		att = HelpAttribute::Full;				 olDefault = false;	break;
-		case 4:		att = HelpAttribute::LongDescription;	 olDefault = false;	break;
-		case 5:		att = HelpAttribute::Usage;				 olDefault = true;	break;
+		case 4:		att = HelpAttribute::Implemented;		 olDefault = true;	break;
+		case 5:		att = HelpAttribute::LongDescription;	 olDefault = false;	break;
+		case 6:		att = HelpAttribute::Usage;				 olDefault = true;	break;
 		default:	
 			att = inputKey.has_value() ? HelpAttribute::Full : HelpAttribute::Description;
 			olDefault = true; 
@@ -236,8 +237,24 @@ namespace CCRepl {
 
 	CMD_H(HelpTree) {
 		std::optional<std::string> inputCmd = args.Get<std::string>(0);
-		if (!inputCmd) ctx.WriteLine(ctx.RootTree());
-		else ctx.WriteLine(ctx.FindCommand(str::DotSeparated(*inputCmd))->PrintTree("", ""));
+		HelpAttribute att;
+		int attMode = args.FirstOptionStart("-a", "-d", "-e", "-i", "-l", "-u");
+		switch (attMode) {
+		case 0: att = HelpAttribute::Aliases;			break;
+		case 1: att = HelpAttribute::Description;		break;
+		case 2: att = HelpAttribute::Examples;			break;
+		case 3: att = HelpAttribute::Implemented;		break;
+		case 4: att = HelpAttribute::LongDescription;	break;
+		case 5: att = HelpAttribute::Usage;				break;
+		default: att = HelpAttribute::None;				break;
+		}
+
+		if (!inputCmd) ctx.WriteLine(ctx.RootTree(att));
+		else {
+			ReplCommand* cmd = ctx.FindCommand(str::DotSeparated(*inputCmd));
+			std::size_t col = str::MaxLength(cmd->PrintTree("", "")) + 5;
+			ctx.WriteLine(cmd->PrintTree("", "", att, col));
+		}
 	}
 
 	CMD_H(CommandList) {
@@ -319,7 +336,7 @@ namespace CCRepl {
 			.Exec(Help)
 			.Test(HelpTest)
 			.Args(StrArg("Search Key", ArgMode::Optional))
-			.Options("-a", "-d", "-e", "-f", "-g", "-l", "-m", "-o", "-u")
+			.Options("-a", "-d", "-e", "-f", "-g", "-i", "-l", "-m", "-o", "-u")
 			.Desc("Lists all commands and descriptions, or shows full help for all commands with Search Key is specified.")
 			.LongDesc(
 				R"(Lists all commands and descriptions, or full help for all commands starting with Search Key. Behaviour altered with options:
@@ -328,6 +345,7 @@ namespace CCRepl {
  * '-e' ('example'): Prints example usages.
  * '-f' ('full'): Prints full info regardless of search key presence.
  * '-g' ('group'): Prints by group (by default only done with no search term. Use '-o' to ungroup that)
+ * '-i' ('implemented'): Gives [x] if command is marked as implemented, otherwise [ ] to indicate work in progress.
  * '-l' ('longdescription'): Prints full long description without truncation.
  * '-m' ('multiline'): Prints in multiple liens regardless of parameter (description by default, use '-f' to show full info).
  * '-o' ('oneline', also '-ol'): Prints only one line regardless of search key presence of parameter.
@@ -351,7 +369,17 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Aliases( "t", "map", "rootmap" )
 				.Exec(HelpTree)
 				.Args(StrArg("Command Name", ArgMode::Optional))
+				.Options("-a", "-d", "-e", "-i", "-l", "-u")
 				.Desc("Prints command tree, or command tree descended from a command if specified. Visualisation of command map/hierarchy.")
+				.LongDesc(
+					R"(Prints command tree, or command tree descended from a command if specified. Visualisation of command map/hierarchy. Behaviour altered with options:
+ * '-a' ('aliases'): Prints lists of aliases.
+ * '-d' ('description'): Prints description.
+ * '-e' ('example'): Prints an example usage.
+ * '-i' ('implemented'): Gives [x] if command is marked as implemented, otherwise [ ] to indicate work in progress.
+ * '-l' ('longdescription'): Prints first line of long description.
+ * '-u' ('usage'): Prints usage statement.)"
+				)
 				.Examples( "Help.Tree", "Help.map()", "Help.Tree(Diary.Add)" )
 
 			),
@@ -411,6 +439,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.LongDesc("Parses and tests a script by file path. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-p' ('print'): Prints more information when parsing.")
 				.Examples("Script.Test()", "Script.Test(C:\\Users\\User\\Desktop\\Script.txt)")
 				.Group("Test")
+				.WIP()
 
 			),
 

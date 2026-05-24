@@ -5,9 +5,11 @@ namespace CCRepl {
 
 	std::string ToString(HelpAttribute help) {
 		switch (help) {
+		case HelpAttribute::None:				return "none";
 		case HelpAttribute::Aliases:			return "aliases";
 		case HelpAttribute::Description:		return "descriptions";
 		case HelpAttribute::Examples:			return "examples";
+		case HelpAttribute::Implemented:		return "implementation statuses";
 		case HelpAttribute::Full:				return "all details";
 		case HelpAttribute::LongDescription:	return "long descriptions";
 		case HelpAttribute::Usage:				return "usage statements";
@@ -26,6 +28,8 @@ namespace CCRepl {
 
 	std::string ReplCommand::PrintIndexLine(HelpAttribute help, std::size_t col, std::size_t total, bool oneline) const {
 		switch (help) {
+		case HelpAttribute::None:
+			return Address;
 		case HelpAttribute::Aliases:
 			return str::ToIndexLine(Address, (Aliases.size() == 0 ? "-" : str::PresentList(Aliases)), col, total, oneline);
 		case HelpAttribute::Description:
@@ -34,6 +38,8 @@ namespace CCRepl {
 			return str::ToIndexLine(Address, (Examples.size() == 0 ? "-" : str::PresentList(Examples, "", "\n", "", "")), col, total, oneline);
 		case HelpAttribute::Full:
 			return PrintFull();
+		case HelpAttribute::Implemented:
+			return str::ToIndexLine(Address, Implemented ? "[x]" : "[ ]", col, total, oneline);
 		case HelpAttribute::LongDescription:
 			return str::ToIndexLine(Address, LongDesc.value_or("-"), col, total, oneline);
 		case HelpAttribute::Usage:
@@ -52,8 +58,9 @@ namespace CCRepl {
 	std::string ReplCommand::PrintFull() const {
 		std::ostringstream oss;
 		oss << '*' << Address
-			<< " (" << Group << ")";
-		oss << "\nParend: "
+			<< " (" << Group << ")"
+			<< (Implemented ? "" : " [WIP]");
+		oss << "\nParent: "
 			<< (Parent ? Parent->Address : "Root")
 			<< '\n';
 		if (!Aliases.empty()) oss << str::PresentList(Aliases, "Aliases: ") << '\n';
@@ -69,12 +76,40 @@ namespace CCRepl {
 		return oss.str();
 	}
 
-	std::string ReplCommand::PrintTree(std::string namePrefix, std::string listPrefix) {
+	std::string ReplCommand::PrintTree(std::string namePrefix, std::string listPrefix, HelpAttribute help, std::size_t col, std::size_t total) {
 		std::ostringstream oss;
-		oss << namePrefix << '[' << Name << "]\n";
+		//oss << namePrefix << '[' << Name << "]\n";
+		std::string line = namePrefix + "[" + Name + "]";
+
+		switch (help) {
+		case HelpAttribute::None: oss << line; break;
+		case HelpAttribute::Aliases:			
+			oss << str::ToIndexLine(line, (Aliases.size() == 0 ? "-" : str::PresentList(Aliases)), col, total, true);
+			break;
+		case HelpAttribute::Description:
+			oss << str::ToIndexLine(line, Desc.value_or("-"), col, total, true);
+			break;
+		case HelpAttribute::Examples:
+			oss << str::ToIndexLine(line, (Examples.size() == 0 ? "-" : str::PresentList(Examples, "", "', '", "'", "'")), col, total, true);
+			break;
+		case HelpAttribute::Full:
+			oss << line; break;
+		case HelpAttribute::Implemented:
+			oss << str::ToIndexLine(line, Implemented ? "[x]" : "[ ]", col, total, true);
+			break;
+		case HelpAttribute::LongDescription:
+			oss << str::ToIndexLine(line, LongDesc.value_or("-"), col, total, true);
+			break;
+		case HelpAttribute::Usage:
+			oss << str::ToIndexLine(line, Usage.value_or("-"), col, total, true);
+			break;
+		default: oss << line;
+		}
+		oss << '\n';
+
 		for (size_t i = 0; i < Children.size(); i++) {
-			if (i == Children.size() - 1) oss << Children[i]->PrintTree(listPrefix + " └─", listPrefix + "   ");
-			else oss << Children[i]->PrintTree(listPrefix + " ├─", listPrefix + " │ ");
+			if (i == Children.size() - 1) oss << Children[i]->PrintTree(listPrefix + " └─", listPrefix + "   ", help, col, total);
+			else oss << Children[i]->PrintTree(listPrefix + " ├─", listPrefix + " │ ", help, col, total);
 		}
 		return oss.str();
 	}

@@ -86,6 +86,7 @@ namespace CCRepl {
 		CommandBuilder& LongDesc(std::string longDesc);
 		CommandBuilder& Group();	// Empty unassigns group from parent.
 		CommandBuilder& Group(std::string group);
+		CommandBuilder& WIP();
 
 		template<typename T>
 		void AddArg(CmdArg<T>&& spec) {

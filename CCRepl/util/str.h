@@ -42,11 +42,13 @@ namespace str {
     std::string PresentList(const std::vector<std::string>& vec, std::string title = "", std::string sep = ", ", std::string start = "[ ", std::string end = " ]");
     std::string ToMultiLine(const std::string& text);
     std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t total, bool oneline = true);
+    std::string ToCheckBox(const bool v);
 
     bool Equals(const std::string& text1, std::string& text2, bool caseSensitive = false);
     bool StartsWith(const std::string& standard, const std::string& text, bool caseSensitive = false);
 
     std::size_t MaxLength(const std::vector<std::string>& vec);
+    std::size_t MaxLength(const std::string& text);
     bool InVector(const std::string& text, const std::vector<std::string>& vec, bool caseSensitive = false);
     std::vector<std::string> SplitBy(const std::string& text, char c = ' ');
     std::vector<std::string> AppendStringVectors(const std::vector<std::string>& v1, const std::vector<std::string>& v2);

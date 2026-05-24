@@ -45,7 +45,7 @@ namespace CCRepl {
 		std::function<void(const std::string&)> ReqWrite;
 		std::function<std::string(const std::string&)> ReqReadLine;
 
-		std::string RootTree();
+		std::string RootTree(HelpAttribute att = HelpAttribute::None, std::size_t total = 180);
 		bool Confirm(const std::string& prompt = "(Y/N): ", const std::string& retryPrompt = "Cannot parse, please try again.");
 
 		// Status:

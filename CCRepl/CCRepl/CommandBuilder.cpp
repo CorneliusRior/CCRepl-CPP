@@ -32,6 +32,7 @@ namespace CCRepl {
 	CommandBuilder& CommandBuilder::LongDesc(std::string longDesc) { _cmd.LongDesc = longDesc; return *this; }
 	CommandBuilder& CommandBuilder::Group() { _cmd.Group = "Ungrouped"; return *this; }
 	CommandBuilder& CommandBuilder::Group(std::string group) { _cmd.Group = group; return *this; }	
+	CommandBuilder& CommandBuilder::WIP() { _cmd.Implemented = false; return *this; }
 
 	ReplCommand CommandBuilder::Build() { return std::move(_cmd); }
 

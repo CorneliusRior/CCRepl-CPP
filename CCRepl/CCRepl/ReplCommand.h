@@ -11,10 +11,12 @@ namespace CCRepl {
 	class ReplContext;
 
 	enum class HelpAttribute {
+		None,
 		Aliases,
 		Description,
 		Examples,
 		Full,
+		Implemented,
 		LongDescription,
 		Usage
 	};
@@ -40,6 +42,7 @@ namespace CCRepl {
 		std::vector<std::string> Examples;
 		std::vector<ReplCommand> ChildrenInit;
 		std::vector<ReplCommand*> Children;
+		bool Implemented = true;
 		
 		// Points to its own listing in ReplContext.CommandReg
 		ReplCommand* RegPtr = nullptr;
@@ -58,7 +61,7 @@ namespace CCRepl {
 		std::string PrintFull() const;
 		std::string PrintIndexLine(HelpAttribute help, std::size_t col, std::size_t total, bool oneline = true) const;
 		std::vector<std::string> GetChildAddresses() const;
-		std::string PrintTree(std::string namePrefix, std::string listPrefix);
+		std::string PrintTree(std::string namePrefix, std::string listPrefix, HelpAttribute help = HelpAttribute::None, std::size_t col =  50, std::size_t total = 180);
 	};
 
 }
