@@ -163,7 +163,7 @@ namespace CCRepl {
 	void ReplContext::Write(double value) const { std::cout << value; }
 
 	void ReplContext::RegCmd(ReplCommand cmd) {
-		ReplCommand* reg = AssignAddresses(cmd, "");
+		ReplCommand* reg = AssignAddresses(cmd, nullptr);
 		AssignAliases(*reg, "");
 		RootCommands.push_back(reg->RegPtr);
 	}
@@ -172,9 +172,14 @@ namespace CCRepl {
 		for (ReplCommand& cmd : cmdSet->GetCommands()) RegCmd(std::move(cmd));
 	}
 
-	ReplCommand* ReplContext::AssignAddresses(ReplCommand& cmd, const std::string& parentAddress) {
-		// Generate and assign address and usage:
-		cmd.Address = parentAddress + (parentAddress.empty() ? "" : ".") + cmd.Name;
+	ReplCommand* ReplContext::AssignAddresses(ReplCommand& cmd, ReplCommand* parent) {
+		cmd.Parent = parent;
+		
+		// Generate and assign address:
+		//cmd.Address = parentAddress + (parentAddress.empty() ? "" : ".") + cmd.Name;
+		cmd.Address = parent ? parent->Address + "." + cmd.Name : cmd.Name;
+
+		// Build usage statement:
 		std::ostringstream oss;
 		oss << cmd.Address;
 		for (std::unique_ptr<IArgSpec>& arg : cmd.ArgSpecs) {
@@ -191,7 +196,7 @@ namespace CCRepl {
 		reg.RegPtr = &reg;
 
 		// Do the same for each child:
-		for (ReplCommand& c : reg.ChildrenInit) reg.Children.push_back(AssignAddresses(c, reg.Address));
+		for (ReplCommand& c : reg.ChildrenInit) reg.Children.push_back(AssignAddresses(c, &reg));
 		return &reg;
 	}
 

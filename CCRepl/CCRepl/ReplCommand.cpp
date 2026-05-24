@@ -53,7 +53,9 @@ namespace CCRepl {
 		std::ostringstream oss;
 		oss << '*' << Address;
 		if (Group) oss << " (" << *Group << ")";
-		oss << '\n';
+		oss << "\nParend: "
+			<< (Parent ? Parent->Address : "Root")
+			<< '\n';
 		if (!Aliases.empty()) oss << str::PresentList(Aliases, "Aliases: ") << '\n';
 		if (Usage) oss << "Usage: " << *Usage << '\n';
 		if (Desc) oss << "Description: " << *Desc << '\n';

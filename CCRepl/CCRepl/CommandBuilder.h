@@ -83,6 +83,7 @@ namespace CCRepl {
 		CommandBuilder& Mode(int mode);
 		CommandBuilder& Desc(std::string desc);
 		CommandBuilder& LongDesc(std::string longDesc);
+		CommandBuilder& Group();	// Empty unassigns group from parent.
 		CommandBuilder& Group(std::string group);
 
 		template<typename T>

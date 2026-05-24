@@ -108,7 +108,7 @@ namespace CCRepl {
 		std::size_t lastStatus = 0;
 		void RegCmd(ReplCommand cmd);
 		void RegCmd(CommandSet* cmdSet);
-		ReplCommand* AssignAddresses(ReplCommand& cmd, const std::string& parentAddress);
+		ReplCommand* AssignAddresses(ReplCommand& cmd, ReplCommand* parent);
 		void AssignAliases(ReplCommand& cmd, const std::string& parentAddress);
 
 		std::unordered_map<std::type_index, std::shared_ptr<void>> serviceMap_;

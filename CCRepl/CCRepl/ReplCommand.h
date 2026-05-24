@@ -24,6 +24,7 @@ namespace CCRepl {
 	class ReplCommand {
 	public:
 
+		ReplCommand* Parent = nullptr;	// null for root commands.
 		std::string Name;
 		std::string Address;
 		std::vector<std::string> Aliases;
