@@ -74,6 +74,7 @@ namespace CCRepl {
 		ReplCommand _cmd;
 		ReplCommand ToCmd(ReplCommand cmd) { return std::move(cmd); }
 		ReplCommand ToCmd(CommandBuilder& builder) { return builder.Build(); }
+		ReplCommand ToCmd(CommandBuilder&& builder) { return builder.Build(); }
 
 	public:
 

@@ -71,10 +71,10 @@ namespace CCRepl {
 
 		// Write it out:
 		if (group) {
-			std::set<std::optional<std::string>> seen;
-			std::vector<std::optional<std::string>> groups;
+			std::set<std::string> seen;
+			std::vector<std::string> groups;
 			for (const auto& it : filtered) {
-				std::optional<std::string> group = it.second.Group;
+				std::string group = it.second.Group;
 				if (seen.insert(group).second) groups.push_back(group);
 			}
 
@@ -82,9 +82,9 @@ namespace CCRepl {
 			std::sort(groups.begin(), groups.end(),
 				[](const auto& a, const auto& b) {
 					auto rank = [](const auto& s) {
-						if (s && *s == "Base") return 0;
-						if (s) return 1;
-						return 2;
+						if (s == "Base") return 0;
+						if (s == "Ungrouped") return 2;
+						return 1;
 						};
 					int ra = rank(a);
 					int rb = rank(b);
@@ -92,17 +92,13 @@ namespace CCRepl {
 					return a < b;
 				});
 
-			for (std::optional<std::string> g : groups) {
+			for (std::string g : groups) {
 				auto gfiltered = ctx.CommandReg | std::views::filter(
 					[&sk, &g](const auto& it) { return it.first.starts_with(sk) && it.second.Group == g;}
 				);
 
 				// Print banner:
-				oss << "\n * "
-					<< g.value_or("Ungrouped")
-					<< " ("
-					<< std::ranges::distance(gfiltered)
-					<< " total):\n";
+				oss << "\n * " << g << " (" << std::ranges::distance(gfiltered) << " total):\n";
 
 				// Print each line:
 				for (const auto& it : gfiltered)
@@ -167,10 +163,10 @@ namespace CCRepl {
 		std::ostringstream oss;
 
 		if (args.HasOptStart("-g")) {
-			std::set<std::optional<std::string>> seen;
-			std::vector<std::optional<std::string>> groups;
+			std::set<std::string> seen;
+			std::vector<std::string> groups;
 			for (const auto& it : filtered) {
-				std::optional<std::string> group = it.second->Group;
+				std::string group = it.second->Group;
 				if (seen.insert(group).second) groups.push_back(group);
 			}
 
@@ -178,9 +174,9 @@ namespace CCRepl {
 			std::sort(groups.begin(), groups.end(),
 				[](const auto& a, const auto& b) {
 					auto rank = [](const auto& s) {
-						if (s && *s == "Base") return 0;
-						if (s) return 1;
-						return 2;
+						if (s == "Base") return 0;
+						if (s == "Ungrouped") return 2;
+						return 1;
 						};
 					int ra = rank(a);
 					int rb = rank(b);
@@ -189,7 +185,7 @@ namespace CCRepl {
 				});
 
 			// Add each to string:
-			for (std::optional<std::string> g : groups) {
+			for (std::string g : groups) {
 				// Filter for group:
 				auto gfiltered = ctx.AliasReg | std::views::filter(
 					[&sk, &g](const auto& it) { return it.first.starts_with(sk) && it.second->Group == g;}
@@ -204,13 +200,7 @@ namespace CCRepl {
 				}
 
 				// Print banner:
-				oss << "\n * " 
-					<< g.value_or("Ungrouped") 
-					<< " (" 
-					<< std::ranges::distance(gfiltered) 
-					<< " total aliases for " 
-					<< gcount
-					<< " commands) :\n";
+				oss << "\n * " << g << " (" << std::ranges::distance(gfiltered) << " total aliases for " << gcount << " commands) :\n";
 
 				// Print each line:
 				for (const auto& it : gfiltered) 
@@ -355,8 +345,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Options("-g")
 				.Desc("Lists all aliases and corresponding canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
 				.LongDesc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified.Behaviour altered with option : \n * '-g' ('group') : Prints by group.")
-				.Examples( "Help.Aliases", "Help.als", "Help.Aliases(Journal.Add)", "Help.Aliases() -g" )
-				.Group("Base"),
+				.Examples( "Help.Aliases", "Help.als", "Help.Aliases(Journal.Add)", "Help.Aliases() -g" ),
 
 				Cmd("Tree")
 				.Aliases( "t", "map", "rootmap" )
@@ -364,7 +353,6 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Args(StrArg("Command Name", ArgMode::Optional))
 				.Desc("Prints command tree, or command tree descended from a command if specified. Visualisation of command map/hierarchy.")
 				.Examples( "Help.Tree", "Help.map()", "Help.Tree(Diary.Add)" )
-				.Group("Base")
 
 			),
 
@@ -385,7 +373,6 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Desc("Lists all aliases and corresponding canonical names for all commands, or for all commands and aliases starting with Search Key is specified.")
 				.LongDesc("Lists all aliases and their canonical names for all commands, or for all commands and aliases starting with Search Key is specified. Behaviour altered with option : \n * '-g' ('group') : Prints by group.")
 				.Examples( "CommandList.Aliases", "CommandList.als", "CommandList.Aliases(Journal.Add)", "CommandList.Aliases() -g" )
-				.Group("Base")
 
 			),
 
@@ -413,8 +400,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Mode(1)
 				.Desc("Parses, tests, and runs a script by file path.")
 				.LongDesc("Parses, tests, and runs a script by file path. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-f' ('force'): Runs the script without testing.\n * '-p' ('print'): Prints more information when parsing.")
-				.Examples( "Script.Run()", "Script.Run(C:\\Users\\User\\Desktop\\Script.txt)", "Script.Run() -f")
-				.Group("Base"),
+				.Examples( "Script.Run()", "Script.Run(C:\\Users\\User\\Desktop\\Script.txt)", "Script.Run() -f"),
 
 				Cmd("Test")
 				.Aliases("t", "tst")
@@ -424,7 +410,7 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Desc("Parses and tests a script by file path.")
 				.LongDesc("Parses and tests a script by file path. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-p' ('print'): Prints more information when parsing.")
 				.Examples("Script.Test()", "Script.Test(C:\\Users\\User\\Desktop\\Script.txt)")
-				.Group("Base")
+				.Group("Test")
 
 			),
 

@@ -10,6 +10,7 @@ namespace CCRepl {
 
 		ReplCommand ToCmd(ReplCommand cmd) { return std::move(cmd); }
 		ReplCommand ToCmd(CommandBuilder& builder) { return builder.Build(); }
+		ReplCommand ToCmd(CommandBuilder&& builder) { return builder.Build(); }
 
 		template<typename... Cmds>
 		void Define(Cmds&&... cmds) {

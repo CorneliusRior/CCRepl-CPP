@@ -51,8 +51,8 @@ namespace CCRepl {
 
 	std::string ReplCommand::PrintFull() const {
 		std::ostringstream oss;
-		oss << '*' << Address;
-		if (Group) oss << " (" << *Group << ")";
+		oss << '*' << Address
+			<< " (" << Group << ")";
 		oss << "\nParend: "
 			<< (Parent ? Parent->Address : "Root")
 			<< '\n';

@@ -190,6 +190,9 @@ namespace CCRepl {
 		}
 		cmd.Usage = oss.str();
 
+		// Assign group:
+		cmd.Group = cmd.Group.empty() ? (parent ? parent->Group : "Ungrouped") : cmd.Group;
+
 		// Register it & define registration pointer:
 		auto [it, inserted] = CommandReg.emplace(str::ToLower(cmd.Address), std::move(cmd));
 		ReplCommand& reg = it->second;

@@ -35,7 +35,7 @@ namespace CCRepl {
 		std::optional<std::string> Desc;
 		std::optional<std::string> LongDesc;
 		std::optional<std::string> Usage;
-		std::optional<std::string> Group;
+		std::string Group = "";
 		std::vector<std::string> Options;
 		std::vector<std::string> Examples;
 		std::vector<ReplCommand> ChildrenInit;
