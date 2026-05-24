@@ -5,72 +5,68 @@
 
 namespace str {
 
-	/*
-	Debugging Lambda:
-	auto p = [](const std::string& text) {
-			std::cout << "str::[FUNCTION](): " << text << std::endl;
-			};
-	*/
-
 	std::size_t StrLength(const std::string& text) {
 		std::size_t i = 0;
 		for (unsigned char c : text) if ((c & 0b11000000) != 0b10000000) i++;
 		return i;
 	}
 
-	std::string DropFirstUtf8(const std::string& text, std::size_t n) {
-		// Convert Start Position:
+	std::size_t Utf8BytePos(const std::string& text, std::size_t charIndex) {
 		std::size_t bytePos = 0;
-		for (std::size_t i = 0; bytePos < text.size(); bytePos++) {
-			unsigned char c = static_cast<unsigned char>(text[bytePos]);
-			if ((c & 0b11000000) != 0b10000000) {
-				if (i == n) break;
-				i++;
+		std::size_t charCount = 0;
+
+		while (bytePos < text.size()) {
+			if ((static_cast<unsigned char>(text[bytePos]) & 0b11000000) != 0b10000000) {
+				if (charCount == charIndex) return bytePos;
+				charCount++;
 			}
+			bytePos++;
 		}
-		std::size_t byteLen = StrLength(text) - bytePos;
-		return text.substr(bytePos, byteLen);
+		return text.size(); // CharIndex >= length, return end
+	}
+
+	std::string SubStrUtf8(const std::string& text, std::size_t start, std::size_t length) {
+		std::size_t byteStart = Utf8BytePos(text, start);
+		std::size_t byteEnd = Utf8BytePos(text, start + length);
+		return text.substr(byteStart, byteEnd - byteStart);
+	}
+
+	std::string DropFirstUtf8(const std::string& text, std::size_t n) {
+		return text.substr(Utf8BytePos(text, n));
 	}
 
 	std::string DropLastUtf8(const std::string& text, std::size_t n) {
-		return text.substr(0, StrLength(text) - n);
+		std::size_t len = StrLength(text);
+		if (n >= len) return "";
+		return text.substr(0, Utf8BytePos(text, len - n));
 	}
 
-	std::string SubStrUtf8(const std::string& text, std::size_t startPos, std::size_t length) {
-		// Convert Start Position:
-		std::size_t bytePos = 0;
-		for (std::size_t i = 0; bytePos < text.size(); bytePos++) {
-			unsigned char c = static_cast<unsigned char>(text[bytePos]);
-			if ((c & 0b11000000) != 0b10000000) {
-				if (i == startPos) break;
-				i++;
-			}
-		}
-
-		// Convert Length (get end position then subtract):
-		std::size_t byteEnd = bytePos;
-		for (std::size_t i = 0; byteEnd < text.size(); byteEnd++) {
-			unsigned char c = static_cast<unsigned char>(text[byteEnd]);
-			if ((c & 0b11000000) != 0b10000000) {
-				if (i == length) break;
-				i++;
-			}
-		}
-		std::size_t byteLen = byteEnd - bytePos;
-		
-		// Substring:
-		return text.substr(bytePos, byteLen);
+	std::string Repeat(const char c, std::size_t n) {
+		return std::string(n, c);
 	}
 
 	std::string Repeat(const std::string& text, std::size_t n) {
 		std::string r;
+		r.reserve(text.size() * n);
 		for (std::size_t i = 0; i < n; i++) r += text;
 		return r;
 	}
 
-	std::string ToSingleLine(const std::string& text) {
+	std::string ToSingleLine(const std::string& text, bool removeDuplicates) {
 		std::string r = text;
-		std::replace_if(r.begin(), r.end(), [](char c) { return c == '\n' || c == '\r' || c == '\n\r';}, ' ');
+		std::replace_if(
+			r.begin(), 
+			r.end(), 
+			[](char c) { return c == '\n' || c == '\r' || c == '\n\r';}, 
+			' '
+		);
+
+		if (removeDuplicates)
+			r.erase(std::unique(r.begin(), r.end(),
+				[](char a, char b) { return a == ' ' && b == ' '; }),
+				r.end()
+			);
+
 		return r;
 	}
 
@@ -92,41 +88,44 @@ namespace str {
 		std::string r = text;
 		std::size_t f = r.find_first_not_of(" \t\n\r");
 		if (f == std::string::npos) return r;
-		r[f] = std::toupper(r[f]);
+		r[f] = std::toupper(static_cast<unsigned char>(r[f]));
 		return r;
 	}
 
 	std::string Trim(const std::string& text) {
-		std::size_t s = text.find_first_not_of(" \t\r\n");
-		std::size_t e = text.find_last_not_of(" \t\r\n");
-		return (e == std::string::npos) ? "" : SubStrUtf8(text, s, e - s + 1);
+		return detail::ApplyTrim(text, [](char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }, 0);
 	}
 
-	std::string TrimAscii(const std::string& text) {
-		std::size_t s = text.find_first_not_of(" \t\r\n");
-		std::size_t e = text.find_last_not_of(" \t\r\n");
-		return (e == std::string::npos) ? "" : text.substr( s, e - s + 1);
+	std::string Trim(const std::string& text, char c) {
+		return detail::ApplyTrim(text, [c](char i) { return i == c; }, 0);
 	}
 
-	std::string TrimChar(const std::string& text, char c) {
-		std::size_t s = text.find_first_not_of(c);
-		std::size_t e = text.find_last_not_of(c);
-		return (e == std::string::npos) ? "" : SubStrUtf8(text, s, e - s + 1);
+	std::string Trim(const std::string& text, const std::vector<char>& cs) {
+		return detail::ApplyTrim(text, [&cs](char c) { return std::find(cs.begin(), cs.end(), c) != cs.end(); }, 0);
 	}
 
-	std::string TrimCharAscii(const std::string& text, char c) {
-		std::size_t s = text.find_first_not_of(c);
-		std::size_t e = text.find_last_not_of(c);
-		return (e == std::string::npos) ? "" : text.substr(s, e - s + 1);
+	std::string TrimStart(const std::string& text) {
+		return detail::ApplyTrim(text, [](char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }, -1);
 	}
 
-	std::string TrimChars(const std::string& text, const std::vector<char>& cs) {
-		auto isTrim = [&](char c) { return std::find(cs.begin(), cs.end(), c) != cs.end(); };
-		auto s = std::find_if_not(text.begin(), text.end(), isTrim);
-		auto e = std::find_if_not(text.rbegin(), text.rend(), isTrim).base();
+	std::string TrimStart(const std::string& text, char c) {
+		return detail::ApplyTrim(text, [c](char i) { return i == c; }, -1);
+	}
 
-		if (s >= e) return "";
-		return std::string(s, e);
+	std::string TrimStart(const std::string& text, const std::vector<char>& cs) {
+		return detail::ApplyTrim(text, [&cs](char c) { return std::find(cs.begin(), cs.end(), c) != cs.end(); }, -1);
+	}
+
+	std::string TrimEnd(const std::string& text) {
+		return detail::ApplyTrim(text, [](char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }, 1);
+	}
+
+	std::string TrimEnd(const std::string& text, char c) {
+		return detail::ApplyTrim(text, [c](char i) { return i == c; }, 1);
+	}
+
+	std::string TrimEnd(const std::string& text, const std::vector<char>& cs) {
+		return detail::ApplyTrim(text, [&cs](char c) { return std::find(cs.begin(), cs.end(), c) != cs.end(); }, 1);
 	}
 
 	// Trims spaces and sets characters to lower case, useful for comparing strings.
@@ -148,18 +147,19 @@ namespace str {
 		);
 
 		// Remove duplicates
-		if (removeDuplicates) {
+		if (removeDuplicates) 
 			r.erase(std::unique(r.begin(), r.end(),
 				[](char a, char b) { return a == '.' && b == '.'; }), 
-				r.end());
-		}
+				r.end()
+			);
 
 		return r;
 	}
 
 	std::string Truncate(const std::string& text, std::size_t w, const std::string& truncateString) {
 		std::string r = ToSingleLine(text);
-		if (w >= StrLength(r)) return r;
+		std::size_t len = StrLength(r);
+		if (w >= len) return r;
 		size_t tl = StrLength(truncateString);
 		if (w <= tl) return SubStrUtf8(r, 0, w);
 		return SubStrUtf8(r, 0, w - tl) + truncateString;
@@ -170,21 +170,22 @@ namespace str {
 		return Repeat(" ", w - StrLength(r)) + r;
 	}
 
-	std::string TruncatePadCenter(const std::string& text, std::size_t w, const std::string& truncateString) {
-		std::string r = Truncate(text, w, truncateString);
-		std::size_t gap = w - StrLength(r);
-		return Repeat(" ", gap / 2) + r + Repeat(" ", gap % 2 == 1 ? (gap / 2) + 1 : gap / 2);
-	}
-
 	std::string TruncatePadRight(const std::string& text, std::size_t w, const std::string& truncateString) {
 		std::string r = Truncate(text, w, truncateString);
 		return r + Repeat(" ", w - StrLength(r));
 	}
 
+	std::string TruncatePadCenter(const std::string& text, std::size_t w, const std::string& truncateString) {
+		std::string r = Truncate(text, w, truncateString);
+		std::size_t gap = w - StrLength(r);
+		std::size_t half = gap / 2;
+		return Repeat(" ", half) + r + Repeat(" ", gap - half);
+	}
+
 	std::string PrintList(const std::vector<std::string>& vec) {
-		std::string r;
-		for (std::string l : vec) r += (l + "\n");
-		return r;
+		std::ostringstream oss;
+		for (std::string l : vec) oss << l << '\n';
+		return oss.str();
 	}
 
 	std::string PresentList(const std::vector<std::string>& vec, std::string title, std::string sep, std::string start, std::string end) {
@@ -227,23 +228,6 @@ namespace str {
 		return oss.str();
 	}
 
-	bool Equals(const std::string& text1, std::string& text2, bool caseSensitive) {
-		if (caseSensitive) return text1 == text2;
-		return ToLower(text1) == ToLower(text2);
-	}
-
-	// Does standard begin with text?
-	bool StartsWith(const std::string& standard, const std::string& text, bool caseSensitive) {
-		if (caseSensitive) return standard.size() >= text.size() && std::equal(text.begin(), text.end(), standard.begin());
-		return standard.size() >= text.size() && 
-			std::equal(
-				text.begin(), text.end(), standard.begin(),
-				[](char a, char b) {
-					return std::tolower((unsigned char)a) == std::tolower((unsigned char)b);
-				}
-			);		
-	}	
-
 	std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t total, bool oneline) {
 		if (col >= total) throw std::runtime_error("str::ToIndex(): col exceeds total.");
 		std::ostringstream oss;
@@ -270,6 +254,24 @@ namespace str {
 	std::string AsPct(const double num, std::size_t prec) {
 		return ToString(num * 100, prec) + "%";
 	}
+
+	bool Equals(const std::string& text1, const std::string& text2, bool caseSensitive) {
+		if (caseSensitive) return text1 == text2;
+		return ToLower(text1) == ToLower(text2);
+	}
+
+	// Does standard begin with text?
+	bool StartsWith(const std::string& standard, const std::string& text, bool caseSensitive) {
+		if (caseSensitive) return standard.size() >= text.size() && std::equal(text.begin(), text.end(), standard.begin());
+		return standard.size() >= text.size() && 
+			std::equal(
+				text.begin(), text.end(), standard.begin(),
+				[](char a, char b) {
+					return std::tolower((unsigned char)a) == std::tolower((unsigned char)b);
+				}
+			);		
+	}	
+
 
 	// Vector functions:
 	
@@ -468,7 +470,7 @@ namespace str {
 		case 1: return "Monday";
 		case 2: return "Tuesday";
 		case 3: return "Wednesday";
-		case 4: return "Thurdsay";
+		case 4: return "Thursday";
 		case 5: return "Friday";
 		case 6: return "Saturday";
 		default: return "Unknown";
@@ -483,12 +485,16 @@ namespace str {
 		std::stringstream buffer;
 		buffer << file.rdbuf();
 
-		// delete:
-		std::this_thread::sleep_for(std::chrono::seconds(3));
 		return buffer.str();
 	}
 
-	void p(std::string text) { std::cout << text << std::endl; }
+	void p(std::string text) { 
+#ifdef NDEBUG
+
+#else
+		std::cout << text << std::endl; 
+#endif
+	}
 
 	std::vector<std::string> SepArgNames(std::string argNames) {
 		std::vector<std::string> r;

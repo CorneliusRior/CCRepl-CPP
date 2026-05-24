@@ -28,7 +28,7 @@ namespace CCRepl {
 
 		auto RemoveLabel = [&](std::string text, const std::string& label) {
 			if (str::StartsWith(text, label)) text = str::DropFirstUtf8(text, str::StrLength(label));
-			text = str::TrimChars(text, colons);
+			text = str::Trim(text, colons);
 			if (text.empty()) errs.push_back(std::format("ScriptMetaData item '{}' is empty.", label));
 			return text;
 			};
@@ -195,7 +195,7 @@ namespace CCRepl {
 		State st = State::InterStmt;
 
 		auto AddStmt = [&]() {
-			currentToken.commandHead = str::TrimChar(cmdss.str(), '.');
+			currentToken.commandHead = str::Trim(cmdss.str(), '.');
 			cmdss.str("");
 			cmdss.clear();
 

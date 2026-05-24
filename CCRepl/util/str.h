@@ -9,9 +9,20 @@
 #include <string>
 #include <vector>
 
+#define STR_P(...) do { \
+    std::ostringstream oss; \
+    std::string file = __FILE__; \
+    oss << '(' << file.substr(file.find_last_of('\\') + 1) << " line " << __LINE__ << ", in " << __func__ << "()): "; \
+    bool first = true; \
+    ((oss << (first ? "" : ", ") << __VA_ARGS__, first = false), ...); \
+    str::p(oss.str()); \
+} while (0)
+
 #define STR_PRINT_V(vec) \
     str::PresentList(vec, "std::vector<std::string> " #vec " = ", "\",\n  \"", "{\n  \"", "\"\n}")
 
+#define STR_VAR(var) std::format("{} = '{}'", #var, var)
+#define STR_VARS(...) STR_P(__VA_ARGS__)
 #define STR_VAR_DEF(var) std::format("{} = '{}'", #var, var)
 #define STR_FUNC_LOG(...) str::FuncLog(__FILE__, __LINE__, __func__, #__VA_ARGS__, __VA_ARGS__)
 #define STR_FUNC_LOG_ML(...) str::FuncLogML(__FILE__, __LINE__, __func__, #__VA_ARGS__, __VA_ARGS__)
@@ -19,44 +30,98 @@
 
 namespace str {
 	std::size_t StrLength(const std::string& text);
+    // Removes the first n letters from string text, accounts for UTF-8 formatting.
+    std::size_t Utf8BytePos(const std::string& text, std::size_t charIndex);
+    // Returns a substring from text, starting at start, of length 'length', accounts for UTF-8 formatting.
+	std::string SubStrUtf8(const std::string& text, std::size_t start, std::size_t length);
+    // Returns length of text, accounts for UTF-8 formatting.
     std::string DropFirstUtf8(const std::string& text, std::size_t n);
+    // Removes the last n letters from string text, accounts for UTF-8 formatting.
     std::string DropLastUtf8(const std::string& text, std::size_t n);
-	std::string SubStrUtf8(const std::string& text, std::size_t startPos, std::size_t endPos);
+    // Repeats a char n times.
+    std::string Repeat(const char c, std::size_t n);
+    // Repeats a string n times.
     std::string Repeat(const std::string& text, std::size_t n);
-    std::string ToSingleLine(const std::string& text);
+    // Replaces all new paragraphs with ' '.
+    std::string ToSingleLine(const std::string& text, bool removeDuplicates = true);
+    // Returns text lower case.
     std::string ToLower(const std::string& text);
+    // Returns text as upper case.
     std::string ToUpper(const std::string& text);
+    // Sets the first non-whitespace character in the string as upper case.
     std::string Capitalize(const std::string& text);
-    std::string Trim(const std::string& text);
-    std::string TrimAscii(const std::string& text);
-    std::string TrimChar(const std::string& text, char c);
-    std::string TrimCharAscii(const std::string& text, char c);
-    std::string TrimChars(const std::string& text, const std::vector<char>& cs);
-    std::string TrimToLower(const std::string& text);
-    std::string DotSeparated(const std::string& text, bool removeDuplicates = true);
-    std::string Truncate(const std::string& text, std::size_t w, const std::string& truncateString = "…");
-    std::string TruncatePadLeft(const std::string& text, std::size_t w, const std::string& truncateString = "…");
-    std::string TruncatePadCenter(const std::string& text, std::size_t w, const std::string& truncateString = "…");
-    std::string TruncatePadRight(const std::string& text, std::size_t w, const std::string& truncateString = "…");
-    std::string PrintList(const std::vector<std::string>& vec);
-    std::string PresentList(const std::vector<std::string>& vec, std::string title = "", std::string sep = ", ", std::string start = "[ ", std::string end = " ]");
-    std::string ToMultiLine(const std::string& text);
-    std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t total, bool oneline = true);
-    std::string ToCheckBox(const bool v);
 
-    bool Equals(const std::string& text1, std::string& text2, bool caseSensitive = false);
+    // Removes whitespace chars from start and end of text.
+    std::string Trim(const std::string& text);
+    // Removes instances of char c from start and end of text.
+    std::string Trim(const std::string& text, char c);
+    // Removes instances of any char in cs from start and end of text.
+    std::string Trim(const std::string& text, const std::vector<char>& cs);
+    // Removes whitespace chars from start of text.
+    std::string TrimStart(const std::string& text);
+    // Removes instances of char c from start of text.
+    std::string TrimStart(const std::string& text, char c);
+    // Removes instances of any char in cs from start of text.
+    std::string TrimStart(const std::string& text, const std::vector<char>& cs);
+    // Removes whitespace chars from end of text.
+    std::string TrimEnd(const std::string& text);
+    // Removes instances of char c from end of text.
+    std::string TrimEnd(const std::string& text, char c);
+    // Removes instances of any char in cs from end of text.
+    std::string TrimEnd(const std::string& text, const std::vector<char>& cs);
+
+    // Trims spaces and sets characters to lower case, useful for comparing strings.
+    std::string TrimToLower(const std::string& text);
+    // Replaces every instance of ' ', ',', '/', or combinations of those with '.' and trims, used for creating command statements.
+    std::string DotSeparated(const std::string& text, bool removeDuplicates = true);
+    // Sets string to a single line, if length exceeds w, truncates and puts truncateString at the end.
+    std::string Truncate(const std::string& text, std::size_t w, const std::string& truncateString = "…");
+    // Truncates (see str::Truncate()) then adds spaces to the left side of the string if space remains.
+    std::string TruncatePadLeft(const std::string& text, std::size_t w, const std::string& truncateString = "…");
+    // Truncates (see str::Truncate()) then adds spaces to the right side of the string if space remains.
+    std::string TruncatePadRight(const std::string& text, std::size_t w, const std::string& truncateString = "…");
+    // Truncates (see str::Truncate()) then adds remaining spaces on either side of text.
+    std::string TruncatePadCenter(const std::string& text, std::size_t w, const std::string& truncateString = "…");
+    // Prints every item in a string vector as its own line into a single string.
+    std::string PrintList(const std::vector<std::string>& vec);
+    // Prints a list with optional title, separation strings, start and end strings.
+    std::string PresentList(const std::vector<std::string>& vec, std::string title = "", std::string sep = ", ", std::string start = "[ ", std::string end = " ]");
+    // Converts every instance of "\n" in a string to a new line.
+    std::string ToMultiLine(const std::string& text);
+    // Prints an index line: key to left, truncated by col, value written from col, wraps or truncates at total unless oneline is true.
+    std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t total, bool oneline = true);
+    // Returns [x] if true, [ ] if false.
+    std::string ToCheckBox(const bool v);
+    // Returns percentage of numerator and denominator as a percentage, e.g. 0.5, 2 -> "25%".
+    std::string Pct(const double num, const double denom, std::size_t prec = 1);
+    // Returns double as a percentage, e.g. 0.25 -> "25%".
+    std::string AsPct(const double num, std::size_t prec = 1);
+
+    // Returns true if texts are equal, case insensitive by default.
+    bool Equals(const std::string& text1, const std::string& text2, bool caseSensitive = false);
+    // Returns true if standard begins with text, case insensitive by default.
     bool StartsWith(const std::string& standard, const std::string& text, bool caseSensitive = false);
 
+    // Returns length of longest string in a string vector.
     std::size_t MaxLength(const std::vector<std::string>& vec);
+    // Returns length of longest line in a string.
     std::size_t MaxLength(const std::string& text);
+    // returns true if text is in the string vector vec, case insensitive by default.
     bool InVector(const std::string& text, const std::vector<std::string>& vec, bool caseSensitive = false);
+    // Split string into a string vector by a character, e.g. str::SplitBy(text, '\n');.
     std::vector<std::string> SplitBy(const std::string& text, char c = ' ');
+    // Built a string vector in which every line of v2 is to the right of v1.
     std::vector<std::string> AppendStringVectors(const std::vector<std::string>& v1, const std::vector<std::string>& v2);
+    // Add n spaces to the start of every string in vec.
     std::vector<std::string> Indent(const std::vector<std::string>& vec, size_t n = 1);
+    // Add n spaces to the start of every line in a string.
     std::vector<std::string> IndentStr(const std::string& text, size_t n = 1);
+    // Wrap text into a certain width. Pad adds white space to the end so that every line is the same width.
     std::vector<std::string> Wrap(const std::string& text, std::size_t w, bool pad = false);
+    // Prints an index line: key to left, truncated by col, value written from col, wraps or truncates at total unless oneline is true. Returned as a vector.
     std::vector<std::string> ToIndexLineV(const std::string& index, const std::string& value, std::size_t col, std::size_t total, bool oneline = true);
 
+    // Prints a double as a string with prec decimal places. Compact truncates like 1,234,567 -> 1.2M
     std::string ToString(const double value, std::size_t prec = 1, bool compact = false);
 
     // Time Functions:
@@ -70,6 +135,16 @@ namespace str {
     void p(std::string text);
 
     std::vector<std::string> SepArgNames(std::string argNames);
+
+    namespace detail {
+        template<typename F>
+        static std::string ApplyTrim(const std::string& text, F predicate, int mode = 0) {
+            // Mode: Negative = trim start, Positive = trim end, 0 = trim both.
+            auto s = mode > 0 ? text.begin() : std::find_if_not(text.begin(), text.end(), predicate);
+            auto e = mode < 0 ? text.end() : std::find_if_not(text.rbegin(), text.rend(), predicate).base();
+            return (s >= e) ? "" : std::string(s, e);
+        }
+    }
 
     /// <summary>
     /// TruncateList: prints the first 'start' items and the last 'end' items, trunating. Used for displaying large amounts of data.

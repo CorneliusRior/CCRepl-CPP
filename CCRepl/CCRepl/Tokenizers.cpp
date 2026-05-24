@@ -22,7 +22,7 @@ namespace CCRepl {
 		std::string cmdStr = str::Trim(input.substr(0, cmdLen));
 		std::unordered_set<char> dots = { '.', ' ', ',', '/' };	// Replaced by '.' 
 		std::replace_if(cmdStr.begin(), cmdStr.end(), [&](char c) { return dots.contains(c); }, '.');
-		cmdStr = str::TrimCharAscii(cmdStr, '.');
+		cmdStr = str::Trim(cmdStr, '.');
 		cmdStr.erase(std::unique(
 			cmdStr.begin(), cmdStr.end(),
 			[](char a, char b) {
