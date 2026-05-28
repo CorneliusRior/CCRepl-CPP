@@ -74,6 +74,9 @@ namespace CCRepl {
 		bool Test(ReplContext& ctx, bool silent = false);
 		void Execute(ReplContext& ctx);
 		std::string Print(const std::string& title = "Script Info") const;
+
+		static std::vector<fmt::TextTableColumn> GetTableColumns();
+		std::vector<std::string> GetTableRow() const;
 	};
 
 	Script TextToScript(ReplContext& ctx, const std::string& text);

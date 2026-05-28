@@ -131,6 +131,22 @@ namespace CCRepl {
 		return fmt::TxtBoxLeft(oss.str(), title);
 	}
 	
+	std::vector<fmt::TextTableColumn> Script::GetTableColumns() {
+		return {
+			fmt::TextTableColumn("Name:", 30),
+			fmt::TextTableColumn("Stmts #:", 10, fmt::TextAlign::Left, fmt::TextAlign::Right),
+			fmt::TextTableColumn("Format:", 8),
+			fmt::TextTableColumn("Author:", 30),
+			fmt::TextTableColumn("Created:", 10)
+		};
+	}
+
+	std::vector<std::string> Script::GetTableRow() const {
+		return {
+			MetaData.Name, std::to_string(Statements.size()), MetaData.Format, MetaData.Author, str::ToString(MetaData.Created)
+		};
+	}
+
 	Script TextToScript(ReplContext& ctx, const std::string& text) {
 		std::vector<ScriptToken> tokens = TokenizeScript(text);
 		// delete:

@@ -48,6 +48,9 @@
     <ClInclude Include="Script.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ScriptService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CCRepl.cpp">
@@ -81,6 +84,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TestCommands.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ScriptService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
