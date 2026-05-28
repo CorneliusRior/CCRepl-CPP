@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include "ReplContext.h"
 #include "CommandSet.h"
+#include "ScriptService.h"
 
 std::string about =  R"(CCRepl CLI (C++)
 2026, Cornelius Riordan.
@@ -25,6 +26,13 @@ int main()
     CCRepl::TestCommands test;
 
     CCRepl::ReplContext ctx( &base, &test );
+    
+    // Services (Script. Can delete this if you want):
+    
+    //ctx.AddService<CCRepl::ScriptService>(std::make_shared<CCRepl::ScriptService>(
+    //    CCRepl::ScriptService (&ctx, std::filesystem::current_path() / "script")
+    //));
+    CTX_ADD_SVC(CCRepl::ScriptService, &ctx, std::filesystem::current_path() / "scripts");
     
     ctx.AboutStr = about;
     ctx.ReqReadLine = [](const std::string& prompt) {

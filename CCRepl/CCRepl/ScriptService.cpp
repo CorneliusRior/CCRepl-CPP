@@ -25,6 +25,21 @@ namespace CCRepl {
 		scripts_.clear();
 	}
 
+	std::string ScriptService::ListDir() const {
+		return ListDir(dir_);
+	}
+
+	std::string ScriptService::ListDir(const std::filesystem::path& dir) const {
+		ScriptReader reader;
+		std::vector<std::filesystem::path> files = reader.ListFiles(dir);
+		std::ostringstream oss;
+		oss << "All files in /" << dir.filename().string() << "/ (" << files.size() << " total):";
+		for (std::filesystem::path file : files) oss << "\n  - " << file.filename().string();
+		oss << '\n';
+
+		return oss.str();
+	}
+
 	bool ScriptService::HasScript(const std::string& name) const {
 		return scripts_.find(name) != scripts_.end();
 	}
@@ -42,6 +57,12 @@ namespace CCRepl {
 		return GetScript(name).Print();
 	}
 	
+	Script& ScriptService::GetScript(const std::string& name) {
+		auto it = scripts_.find(name);
+		if (it == scripts_.end()) throw std::runtime_error("No loaded data for script: " + name);
+		return it->second;
+	}
+
 	const Script& ScriptService::GetScript(const std::string& name) const {
 		auto it = scripts_.find(name);
 		if (it == scripts_.end()) throw std::runtime_error("No loaded data for script: " + name);
@@ -70,6 +91,7 @@ namespace CCRepl {
 		for (const auto& entry : std::filesystem::directory_iterator(dir)) {
 			if (!entry.is_regular_file()) continue;
 			// if .txt here.
+			r.push_back(entry.path());
 		}
 		return r;
 	}

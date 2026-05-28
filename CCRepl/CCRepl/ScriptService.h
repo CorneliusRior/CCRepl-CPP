@@ -3,6 +3,19 @@
 #include <ranges>
 #include "Script.h"
 
+/*
+Macros, CCSS stands for "CC(Repl) Script Service".
+Can do
+auto service = CCSS_GET_SVC();
+CCSS_GET_SVC()->ListDir();
+CCSS_SET_SVC();
+*/
+
+// This is ScriptService
+#define CCSS_GET_SVC() ctx.ctx.GetService<CCRepl::ScriptService>()
+// Defines shared pointer called svc
+#define CCSS_SET_SVC() auto svc = ctx.GetService<CCRepl::ScriptService>()
+
 namespace CCRepl {
 
 	class ScriptService {
@@ -20,8 +33,10 @@ namespace CCRepl {
 		void LoadAll(const std::string& source);
 		bool Unload(const std::string& name);
 		void UnloadAll();
+		std::string ListDir() const;	// Overload which does dir_
+		std::string ListDir(const std::filesystem::path& dir) const;
 
-		bool HasScript(const std::string& name) const;
+		bool HasScript(const std::string& name) const;		
 		std::string ListScripts(const std::string& sk) const;
 		std::string PrintScript(const std::string& name) const;
 		Script& GetScript(const std::string& name);

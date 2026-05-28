@@ -7,6 +7,7 @@
 #include "ReplCommand.h"
 #include "ReplContext.h"
 #include "Script.h"
+#include "ScriptService.h"
 
 namespace CCRepl {
 
@@ -304,6 +305,35 @@ namespace CCRepl {
 		else scp.Test(ctx, !PrintAll);
 	}
 
+	// Listing
+	CMD_H(ScpSvcList) {
+		CCSS_SET_SVC();
+		switch (args.Mode()) {
+		case 1: {
+			std::optional<std::string> dir = args.Get<std::string>(0);
+			if (dir) ctx.WriteLine(svc->ListDir(*dir));
+			else ctx.WriteLine(svc->ListDir());
+			break;
+		}
+		case 2: {
+			ctx.WriteLine(svc->ListScripts(args.GetR<std::string>(0)));
+			break;
+		}
+		default:
+			throw ReplException("Unknown command mode: " + args.Mode());
+		}
+	}
+
+	// Loading & unloading
+	CMD_H(ScpSvcData) {
+
+	}
+
+	// Testing/running
+	CMD_H(ScpSvcRunner) {
+
+	}
+
 	CMD_H(Clear) {
 		if (args.Opt("-b")) ctx.Clear();
 		else ctx.Clear(args.GetOr<std::string>(0, "Cleared Screen."));
@@ -420,6 +450,51 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 			.Group("Base")
 			.Children(
 				
+				// These are for testing w/ script service, can delete this later:
+				Cmd("Service")
+				.Aliases("s", "svc")
+				.Desc("Commands for testing ScriptService, nodal.")
+				.Group("ScriptService")
+				.Children(
+
+					Cmd("ListDir")
+					.Aliases("ld", "lstdir", "ListDirectory", "files", "listfiles")
+					.Exec(ScpSvcList)
+					.Args(StrArg("Source", ArgMode::Optional))
+					.Mode(1)
+					.Desc("Lists all files in the script directory, or relative path to a different directory is specified."),
+
+					Cmd("ListLoaded").WIP()
+					.Aliases("ll", "lstl", "lstloaded", "lst", "lstscripts")
+					.Exec(ScpSvcList)
+					.Args(StrArg("Search Key", ArgMode::Optional, ""))
+					.Mode(2)
+					.Desc("Lists all loaded scripts by script service, or all loaded scripts starting with search key if specified."),
+
+					Cmd("Load").WIP()
+					.Children(
+
+						Cmd("Dir").WIP()
+
+					),
+
+					Cmd("Unload").WIP()
+					.Children(
+
+						Cmd("All").WIP()
+
+					),
+
+					Cmd("Run").WIP(),
+
+					Cmd("Test").WIP(),
+
+					Cmd("Print").WIP()
+
+
+				),
+				// End of script service tests
+
 				Cmd("Run")
 				.Aliases("r", "execute", "ex", "testandrun")
 				.Exec(ScriptHandler)

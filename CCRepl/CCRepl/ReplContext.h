@@ -11,6 +11,9 @@
 #define CTX_WAIT_SPIN(T, function, message, doneMessage) \
 	ctx.WaitSpinner<T>([&]() { return function; }, message, doneMessage)
 
+#define CTX_ADD_SVC(Type, ...) \
+	ctx.AddService<Type>(std::make_shared<Type>(__VA_ARGS__))
+
 namespace CCRepl {
 
 	class ReplContext {
@@ -66,6 +69,12 @@ namespace CCRepl {
 		Add like:
 		DataService data;
 		ctx.AddService<DataService>(std::make_shared<DataService>(data));
+
+		ctx.AddService<DataService>(std::make_shared<DataService(std::move(data)));
+		could also be necessary.
+
+		Or use Macro:
+		CTX_ADD_SVC(DataService); (add args needed after, e.g. CTX_ADD_SVC(DataService, path, mode); &c.)
 
 		Get like:
 		auto data = ctx.GetService<DataService>();
