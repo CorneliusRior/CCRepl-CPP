@@ -97,7 +97,7 @@ namespace parsers {
 			v = PrsSize_t(text);
 			return true;
 		}
-		catch (ParseException) { return false; }
+		catch (const ParseException&) { return false; }
 	}
 
 	bool TryBool(const std::string& text, bool& v) {
@@ -105,7 +105,7 @@ namespace parsers {
 			v = PrsBool(text);
 			return true;
 		}
-		catch (ParseException) { return false; }
+		catch (const ParseException&) { return false; }
 	}
 
 	bool TryTime(const std::string& text, std::tm& v) {
@@ -113,6 +113,6 @@ namespace parsers {
 			v = PrsTime(text);
 			return true;
 		}
-		catch (ParseException) { return false; }
+		catch (const ParseException&) { return false; }
 	}
 }

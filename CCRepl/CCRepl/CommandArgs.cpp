@@ -47,7 +47,7 @@ namespace CCRepl {
 							Args.push_back(spec.Parse(input));
 							break;
 						}
-						catch (ReplUserException&) { ctx.WriteLine(info.retryPrompt); }
+						catch (const ReplUserException&) { ctx.WriteLine(info.retryPrompt); }
 					}
 					break;
 				}
@@ -65,7 +65,7 @@ namespace CCRepl {
 							else Args.push_back(spec.Parse(input));
 							break;
 						}
-						catch (ReplUserException&) {
+						catch (const ReplUserException&) {
 							ctx.WriteLine(info.retryPrompt);
 						}
 					}

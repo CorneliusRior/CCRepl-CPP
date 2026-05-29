@@ -27,9 +27,10 @@ namespace CCRepl {
 			CommandArgs args(*this, cmd, tokens.args, tokens.opts);
 			cmd->Execute(*this, args);
 		}
-		catch (ReplUserException ex) { WriteLine(std::format("User error: {}", ex.what())); }
-		catch (ReplException ex) { WriteLine(std::format("Repl Error: {}", ex.what())); }
-		catch (std::runtime_error ex) { WriteLine(std::format("Error: {}", ex.what())); }
+		catch (const ReplUserException& ex) { WriteLine(std::format("User error: {}", ex.what())); }
+		catch (const ReplException& ex) { WriteLine(std::format("Repl Error: {}", ex.what())); }
+		catch (const ReplCancel& ex) { WriteLine(std::format("Cancelled: {}", ex.what())); }
+		catch (const std::runtime_error& ex) { WriteLine(std::format("Error: {}", ex.what())); }
 		catch (...) { WriteLine("Unknown error."); }
 	}
 
@@ -39,9 +40,10 @@ namespace CCRepl {
 			CommandTokens tk = TokenizeParen(input);
 			Execute(tk);
 		}
-		catch (ReplUserException ex) { WriteLine(std::format("User error: {}", ex.what())); }
-		catch (ReplException ex) { WriteLine(std::format("Repl Error: {}", ex.what())); }
-		catch (std::runtime_error ex) { WriteLine(std::format("Error: {}", ex.what())); }
+		catch (const ReplUserException& ex) { WriteLine(std::format("User error: {}", ex.what())); }
+		catch (const ReplException& ex) { WriteLine(std::format("Repl Error: {}", ex.what())); }
+		catch (const ReplCancel& ex) { WriteLine(std::format("Cancelled: {}", ex.what())); }
+		catch (const std::runtime_error& ex) { WriteLine(std::format("Error: {}", ex.what())); }
 		catch (...) { WriteLine("Unknown error."); }		
 	}
 
@@ -58,9 +60,10 @@ namespace CCRepl {
 				ok = true;
 			}
 		}
-		catch (ReplUserException ex) { WriteLine(std::format("User error: {}", ex.what())); ok = false; }
-		catch (ReplException ex) { WriteLine(std::format("Repl Error: {}", ex.what())); ok = false; }
-		catch (std::runtime_error ex) { WriteLine(std::format("Error: {}", ex.what())); ok = false; }
+		catch (const ReplUserException& ex) { WriteLine(std::format("User error: {}", ex.what())); ok = false; }
+		catch (const ReplException& ex) { WriteLine(std::format("Repl Error: {}", ex.what())); ok = false; }
+		catch (const ReplCancel& ex) { WriteLine(std::format("Cancelled: {}", ex.what())); }
+		catch (const std::runtime_error& ex) { WriteLine(std::format("Error: {}", ex.what())); ok = false; }
 		catch (...) { WriteLine("Unknown error."); ok = false; }
 
 		if (ok) {
@@ -76,9 +79,10 @@ namespace CCRepl {
 			CommandTokens tk = TokenizeParen(input);
 			return Test(tk, run);
 		}
-		catch (ReplUserException ex) { WriteLine(std::format("User error: {}", ex.what())); }
-		catch (ReplException ex) { WriteLine(std::format("Repl Error: {}", ex.what())); }
-		catch (std::runtime_error ex) { WriteLine(std::format("Error: {}", ex.what())); }
+		catch (const ReplUserException& ex) { WriteLine(std::format("User error: {}", ex.what())); }
+		catch (const ReplException& ex) { WriteLine(std::format("Repl Error: {}", ex.what())); }
+		catch (const ReplCancel& ex) { WriteLine(std::format("Cancelled: {}", ex.what())); }
+		catch (const std::runtime_error& ex) { WriteLine(std::format("Error: {}", ex.what())); }
 		catch (...) { WriteLine("Unknown error."); }
 		return false;
 	}
