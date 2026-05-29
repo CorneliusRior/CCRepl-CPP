@@ -5,28 +5,51 @@ namespace CCRepl {
 
 	bool ScriptService::LoadScript(const std::string& fileName) {
 		std::filesystem::path filePath = dir_ / fileName;
-		Script s = ScriptReader::ReadFile(filePath, ctx_);
-		std::string key = s.MetaData.Name;
-		scripts_.insert({ key, std::move(s)});
-		return true;
+		try {
+			Script s = ScriptReader::ReadFile(filePath, ctx_);
+			std::string key = s.MetaData.Name;
+			scripts_.insert({ key, std::move(s) });
+			return true;
+		}
+		catch (const ScriptException& ex) {
+			ctx_->WriteLine(std::format("Could not parse file '{}': {}", filePath.filename().string(), ex.what()));
+			return false;
+		}
+		catch (const std::exception& ex) {
+			ctx_->WriteLine(std::format("Could not load '{}': {}", filePath.filename().string(), ex.what()));
+			return false;
+		}
 	}
 
 	bool ScriptService::LoadScriptAbs(const std::string& filePath) {
 		std::filesystem::path pth = filePath;
-		Script s = ScriptReader::ReadFile(pth, ctx_);
-		std::string key = s.MetaData.Name;
-		scripts_.insert({ key, std::move(s) });
-		return true;
+		try {
+			Script s = ScriptReader::ReadFile(pth, ctx_);
+			std::string key = s.MetaData.Name;
+			scripts_.insert({ key, std::move(s) });
+			return true;
+		}
+		catch (const ScriptException& ex) {
+			ctx_->WriteLine(std::format("Could not parse file '{}': {}", pth.filename().string(), ex.what()));
+			return false;
+		}
+		catch (const std::exception& ex) {
+			ctx_->WriteLine(std::format("Could not load '{}': {}", pth.filename().string(), ex.what()));
+			return false;
+		}
 	}
 
 	bool ScriptService::LoadAll(const std::string& source) {
 		std::filesystem::path src = source.empty() ? dir_ : dir_ / source;
 		std::vector<std::filesystem::path> files = ScriptReader::ListFiles(src);
 		for (const auto& file : files) {
-			// Might need to change this in a bit: rn tries to parse regardless of file type.
-			Script s = ScriptReader::ReadFile(file, ctx_);
-			std::string key = s.MetaData.Name;
-			scripts_.insert({ key, std::move(s) });
+			try { 
+				Script s = ScriptReader::ReadFile(file, ctx_); 
+				std::string key = s.MetaData.Name;
+				scripts_.insert({ key, std::move(s) });
+			}
+			catch (const ScriptException& ex) { ctx_->WriteLine(std::format("Skipping file '{}' due to parse error: {}", file.filename().string(), ex.what())); }
+			catch (const std::exception& ex) { ctx_->WriteLine(std::format("Skipping file '{}' due to error: {}", file.filename().string(), ex.what())); }
 		}
 		return true;
 	}
@@ -34,10 +57,13 @@ namespace CCRepl {
 	bool ScriptService::LoadAllAbs(const std::string& source) {
 		std::vector<std::filesystem::path> files = ScriptReader::ListFiles(source);
 		for (const auto& file : files) {
-			// Might need to change this in a bit: rn tries to parse regardless of file type.
-			Script s = ScriptReader::ReadFile(file, ctx_);
-			std::string key = s.MetaData.Name;
-			scripts_.insert({ key, std::move(s) });
+			try {
+				Script s = ScriptReader::ReadFile(file, ctx_);
+				std::string key = s.MetaData.Name;
+				scripts_.insert({ key, std::move(s) });
+			}
+			catch (const ScriptException& ex) { ctx_->WriteLine(std::format("Skipping file '{}' due to parse error: {}", file.filename().string(), ex.what())); }
+			catch (const std::exception& ex) { ctx_->WriteLine(std::format("Skipping file '{}' due to error: {}", file.filename().string(), ex.what())); }
 		}
 		return true;
 	}
@@ -107,6 +133,7 @@ namespace CCRepl {
 	}
 
 	Script ScriptReader::ReadFile(const std::string& path, ReplContext* ctx) {
+		if (!path.ends_with(".ccr")) throw ReplUserException(std::format("File not of type '.ccr': '{}'", path));
 		std::string raw = str::ReadTextFile(path);
 		return TextToScript(*ctx, raw);
 	}
@@ -115,7 +142,7 @@ namespace CCRepl {
 		std::vector<std::filesystem::path> r;
 		for (const auto& entry : std::filesystem::directory_iterator(dir)) {
 			if (!entry.is_regular_file()) continue;
-			// if .txt here.
+			if (entry.path().extension() != ".ccr") continue;
 			r.push_back(entry.path());
 		}
 		return r;

@@ -1,6 +1,0 @@
-ScriptMetaData(
-	Format: parV1,
-	Name: Script2,
-	Author: Cornelius,
-	Created: 2026-04-28
-);

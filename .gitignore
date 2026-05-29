@@ -19,3 +19,6 @@ CMakeCache.txt
 
 # Logs
 *.log
+
+# Scripts directory
+scripts/
