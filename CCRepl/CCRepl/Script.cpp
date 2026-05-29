@@ -69,7 +69,7 @@ namespace CCRepl {
 						tokens[i].endLine
 					});
 			}
-			catch (ReplUserException ex) {
+			catch (const ReplUserException& ex) {
 				std::string errmsg = std::format("({}/{}) '{}' User error: {}\n{}\n", tokens[i].stmtIndex, tokens.size() - 1, tokens[i].tokens.commandHead, ex.what(), tokens[i].Print_ML());
 				errs.push_back(errmsg);
 				ctx.WriteLine(errmsg);
@@ -87,9 +87,9 @@ namespace CCRepl {
 					if (stmt.Args.Cmd->Test(ctx, stmt.Args)) { SCP_PRS_UPD(std::format("[SUCCESS] ('{}').", stmt.Args.CommandAddress)); }
 					else SCP_PRS_ERR("Test function returned false.")
 				}
-				catch (ReplUserException ex) { SCP_PRS_ERR(std::format("User error: {}", ex.what())) }
-				catch (ReplException ex) { SCP_PRS_ERR(std::format("Repl error: {}", ex.what())) }
-				catch (std::runtime_error ex) { SCP_PRS_ERR(std::format("Error: {}", ex.what())) }
+				catch (const ReplUserException& ex) { SCP_PRS_ERR(std::format("User error: {}", ex.what())) }
+				catch (const ReplException& ex) { SCP_PRS_ERR(std::format("Repl error: {}", ex.what())) }
+				catch (const std::runtime_error& ex) { SCP_PRS_ERR(std::format("Error: {}", ex.what())) }
 				catch (...) { SCP_PRS_ERR(std::format("Unknown Error.")) }
 			}
 			else SCP_PRS_UPD(std::format("Method '{}' has no test function: Deemed Success.", stmt.Args.CommandAddress));			
@@ -119,9 +119,9 @@ namespace CCRepl {
 				cmd->Execute(ctx, stmt.Args);
 			}
 		}
-		catch (ReplUserException ex) { ctx.WriteLine(std::format("User error: {}", ex.what())); }
-		catch (ReplException ex) { ctx.WriteLine(std::format("Repl Error: {}", ex.what())); }
-		catch (std::runtime_error ex) { ctx.WriteLine(std::format("Error: {}", ex.what())); }
+		catch (const ReplUserException& ex) { ctx.WriteLine(std::format("User error: {}", ex.what())); }
+		catch (const ReplException& ex) { ctx.WriteLine(std::format("Repl Error: {}", ex.what())); }
+		catch (const std::runtime_error& ex) { ctx.WriteLine(std::format("Error: {}", ex.what())); }
 		catch (...) { ctx.WriteLine("Unknown error."); }
 	}
 
@@ -133,24 +133,22 @@ namespace CCRepl {
 	
 	std::vector<fmt::TextTableColumn> Script::GetTableColumns() {
 		return {
-			fmt::TextTableColumn("Name:", 30),
-			fmt::TextTableColumn("Stmts #:", 10, fmt::TextAlign::Left, fmt::TextAlign::Right),
+			fmt::TextTableColumn("Name:", 25),
+			fmt::TextTableColumn("Stmts #:", 8, fmt::TextAlign::Left, fmt::TextAlign::Right),
 			fmt::TextTableColumn("Format:", 8),
-			fmt::TextTableColumn("Author:", 30),
-			fmt::TextTableColumn("Created:", 10)
+			fmt::TextTableColumn("Author:", 25),
+			fmt::TextTableColumn("Created:", 12)
 		};
 	}
 
 	std::vector<std::string> Script::GetTableRow() const {
 		return {
-			MetaData.Name, std::to_string(Statements.size()), MetaData.Format, MetaData.Author, str::ToString(MetaData.Created)
+			MetaData.Name, std::to_string(Statements.size()), MetaData.Format, MetaData.Author, str::ToDateString(MetaData.Created)
 		};
 	}
 
 	Script TextToScript(ReplContext& ctx, const std::string& text) {
 		std::vector<ScriptToken> tokens = TokenizeScript(text);
-		// delete:
-		std::this_thread::sleep_for(std::chrono::seconds(3));
 		return Script(ctx, tokens);
 	}
 

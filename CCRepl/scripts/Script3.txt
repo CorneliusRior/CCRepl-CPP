@@ -1,0 +1,6 @@
+ScriptMetaData(
+	Format: parV1,
+	Name: Script3,
+	Author: Cornelius,
+	Created: 2026-04-28
+);

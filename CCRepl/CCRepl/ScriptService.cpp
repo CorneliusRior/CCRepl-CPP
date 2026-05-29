@@ -3,18 +3,43 @@
 
 namespace CCRepl {
 
-	void ScriptService::LoadScript(const std::string& name, const std::string& fileName) {
-		ScriptReader reader;
+	bool ScriptService::LoadScript(const std::string& fileName) {
 		std::filesystem::path filePath = dir_ / fileName;
-		scripts_.insert({ name, reader.ReadFile(filePath, ctx_) });
+		Script s = ScriptReader::ReadFile(filePath, ctx_);
+		std::string key = s.MetaData.Name;
+		scripts_.insert({ key, std::move(s)});
+		return true;
 	}
 
-	void ScriptService::LoadAll(const std::string& source) {
-		ScriptReader reader;
-		std::vector<std::filesystem::path> files = reader.ListFiles(dir_);
+	bool ScriptService::LoadScriptAbs(const std::string& filePath) {
+		std::filesystem::path pth = filePath;
+		Script s = ScriptReader::ReadFile(pth, ctx_);
+		std::string key = s.MetaData.Name;
+		scripts_.insert({ key, std::move(s) });
+		return true;
+	}
+
+	bool ScriptService::LoadAll(const std::string& source) {
+		std::filesystem::path src = source.empty() ? dir_ : dir_ / source;
+		std::vector<std::filesystem::path> files = ScriptReader::ListFiles(src);
 		for (const auto& file : files) {
-			scripts_.insert({ file.filename().string() , reader.ReadFile(file, ctx_) });
+			// Might need to change this in a bit: rn tries to parse regardless of file type.
+			Script s = ScriptReader::ReadFile(file, ctx_);
+			std::string key = s.MetaData.Name;
+			scripts_.insert({ key, std::move(s) });
 		}
+		return true;
+	}
+
+	bool ScriptService::LoadAllAbs(const std::string& source) {
+		std::vector<std::filesystem::path> files = ScriptReader::ListFiles(source);
+		for (const auto& file : files) {
+			// Might need to change this in a bit: rn tries to parse regardless of file type.
+			Script s = ScriptReader::ReadFile(file, ctx_);
+			std::string key = s.MetaData.Name;
+			scripts_.insert({ key, std::move(s) });
+		}
+		return true;
 	}
 
 	bool ScriptService::Unload(const std::string& name) {
@@ -77,11 +102,11 @@ namespace CCRepl {
 		GetScript(name).Execute(*ctx_);
 	}
 
-	Script ScriptReader::ReadFile(const std::filesystem::path& path, ReplContext* ctx) const {
+	Script ScriptReader::ReadFile(const std::filesystem::path& path, ReplContext* ctx) {
 		return ReadFile(path.string(), ctx);
 	}
 
-	Script ScriptReader::ReadFile(const std::string& path, ReplContext* ctx) const {
+	Script ScriptReader::ReadFile(const std::string& path, ReplContext* ctx) {
 		std::string raw = str::ReadTextFile(path);
 		return TextToScript(*ctx, raw);
 	}
