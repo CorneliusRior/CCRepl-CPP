@@ -90,7 +90,7 @@ namespace CCRepl {
 	Script TextToScript(ReplContext& ctx, const std::string& text);
 
 	//static std::unordered_set<char> Dots = { '.', ' ', ',', '\n', '\t', '\r' };
-	static std::unordered_set<char> WhiteSpace = { ' ', '\n', '\t', '\r' };
+	inline const std::unordered_set<char> WhiteSpace = { ' ', '\n', '\t', '\r' };
 
 	// Create a list of tokens to be converted into a script later:
 	std::vector<ScriptToken> TokenizeScript(const std::string& text);

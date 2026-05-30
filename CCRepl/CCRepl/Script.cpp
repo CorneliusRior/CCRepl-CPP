@@ -14,7 +14,7 @@ namespace CCRepl {
 
 	std::string PrintSStmtList(const std::vector<ScriptToken>& lst) {
 		std::ostringstream oss;
-		for (ScriptToken stmt : lst) {
+		for (const ScriptToken& stmt : lst) {
 			oss << stmt.Print_ML() << "\n\n";
 		}
 		return oss.str();
@@ -172,34 +172,11 @@ namespace CCRepl {
 		std::size_t scriptLength = text.size();
 		if (scriptLength == 0) return r;
 
-		//std::size_t statementIndex = 0;
-		//CommandTokens currentToken;
-		//ScriptToken currentStatement;
-
-		//std::ostringstream cmdss;
-		//std::ostringstream argss;
-		//std::ostringstream optss;
-
-		STR_P("Started");
-		STR_P(text);
-
-		//std::unordered_set<char> dots = { '.', ' ', ',', '/', '\n', '\t', '\r' };
 		std::unordered_set<char> whiteSpace = { ' ', '\n', '\t', '\r' };
 
 		auto NextChar = [&scriptLength, &text](std::size_t i, char c, std::size_t steps = 1) {
 			return i + steps < scriptLength && text[i + steps] == c;
 			};
-
-		//auto AddArg = [&currentToken, &argss]() {
-		//	currentToken.args.push_back(argss.str());
-		//	argss.str("");
-		//	argss.clear();
-		//	};
-		//auto AddOpt = [&currentToken, &optss]() {
-		//	currentToken.opts.push_back(optss.str());
-		//	optss.str("");
-		//	optss.clear();
-		//	};
 
 		enum class State {
 			InterStmt,		// Between statements (comments & cmd allowed)
@@ -208,7 +185,6 @@ namespace CCRepl {
 		State st = State::InterStmt;
 
 		auto KeywordRepeat = [&](std::size_t& i) {
-			STR_P("KeywordRepeat called", STR_VAR(i));
 			enum class RptState {
 				Vars,		// Defining variables
 				Scope		// Scope what we repeat
@@ -222,9 +198,8 @@ namespace CCRepl {
 			std::map<std::string, std::vector<std::string>> repeatVars;
 
 			// Starts on the space. Make new loop to define the variables:
-			for (i; i < scriptLength && scope.empty(); i++) {
+			for (; i < scriptLength && scope.empty(); i++) {
 				char c = text[i];
-				STR_W(c);
 				switch (rst) {
 
 				case RptState::Vars:
@@ -233,17 +208,14 @@ namespace CCRepl {
 
 					case '[': {
 						std::string name = StringUntil(text, i, ']', true);
-						STR_P("VarName defined:", STR_VAR(name));
 						IgnoreUntil(text, i, '(');
 						repeatVars[name] = TokenizeArgs(text, i);
 						varNames.push_back(name);
-						STR_P(STR_PRINT_V(repeatVars[name]));
 						break;
 					}
 
 					case '{': {
 						rst = RptState::Scope;
-						STR_P("Scoping!");
 						scopeStart = i + 1;
 						continue;
 					}
@@ -256,13 +228,11 @@ namespace CCRepl {
 
 				case RptState::Scope: {
 					if (WhiteSpace.contains(c)) continue;
-					STR_P(STR_VAR(c));
 					if (c == '}') {
 						scopeEnd = i;
 						scope = text.substr(scopeStart, scopeEnd - scopeStart);
-						STR_P("Finished Scoping", STR_VAR(scope));
 					}
-					else TokenizeCmd(text, i);
+					else TokenizeCmd(text, i); // Consume a full command: skips over '}' in quotes/braces.
 					continue;
 				}
 
@@ -295,7 +265,7 @@ namespace CCRepl {
 						tst = State::Keyword;
 						continue;
 					case '/':
-						if (e + 1 >= expanded.size() || expanded[e] != '//') SCRIPT_ERROR("(In expanded): Expected '/' (\"//\" denotes line comment).");
+						if (e + 1 >= expanded.size() || expanded[e] != '/') SCRIPT_ERROR("(In expanded): Expected '/' (\"//\" denotes line comment).");
 						IgnoreUntil(expanded, e, '\n');
 						continue;
 					case '#':
@@ -327,7 +297,6 @@ namespace CCRepl {
 			switch (st) {
 
 			case State::InterStmt: {
-				STR_P("Mainloop, State::InterStmt", STR_VAR(c));
 				if (whiteSpace.contains(c)) continue;
 				switch (c) {
 				case '@':
@@ -357,13 +326,11 @@ namespace CCRepl {
 			}
 			
 			case State::Keyword: {
-				STR_P("Mainloop, State::Keyword", STR_VAR(c));
 				std::string keyword = str::ToUpper(StringUntil(text, i, ' ', false));
 
 				// If this expands to more than like 3 or 4 keywords, make this a whole switch thing:
 				if (keyword == "REPEAT") {
 					// Deal with it here. Do it as its own loop? Lambda? External function? lambda for now.
-					STR_P("**REPEAT**");
 					KeywordRepeat(i);
 				}
 				else SCRIPT_ERROR("Unknown keyword: " + keyword);
@@ -420,7 +387,6 @@ namespace CCRepl {
 
 	std::vector<std::string> TokenizeArgs(const std::string& text, std::size_t& i) {
 		if (++i >= text.size()) SCRIPT_ERROR("End of script, unclosed args.");
-		STR_P(STR_VAR(i), STR_VAR(text[i]));
 		enum class State {
 			Inter,
 			Free,
@@ -434,15 +400,13 @@ namespace CCRepl {
 		std::ostringstream oss;
 		auto AddToken = [&oss, &r] {
 			r.push_back(oss.str());
-			STR_P("Added token", STR_VAR(oss.str()));
 			oss.str("");
 			oss.clear();
 			};
 
-		STR_P("Entering mainloop:");
-		for (i; i < text.size(); i++) {
+		for (; i < text.size(); i++) {
 			char c = text[i];
-			STR_W(c);
+
 			switch (st) {
 
 			case State::Inter: {
@@ -452,15 +416,13 @@ namespace CCRepl {
 					if (!oss.str().empty()) AddToken();
 					return r;
 				case ',': AddToken();			continue;	// Blank argument;
-				case '"': st = State::Quote;	STR_P("[Inter>Quote]"); continue;
-				case '{': st = State::Brace;	STR_P("[Inter>Brace]"); continue;
+				case '"': st = State::Quote;	continue;
+				case '{': st = State::Brace;	continue;
 				default:
 					st = State::Free;
-					STR_P("[Inter>Free]");
 					oss << c;
 					continue;
 				}
-				continue;
 			}
 
 			case State::Free: {
@@ -470,7 +432,6 @@ namespace CCRepl {
 					r.push_back(str::Trim(oss.str(), '\n'));
 					oss.str("");
 					oss.clear();
-					STR_P("[Free>Inter]");
 					st = State::Inter;
 					continue;
 				case ')':
@@ -478,7 +439,6 @@ namespace CCRepl {
 					r.push_back(str::Trim(oss.str(), '\n'));
 					oss.str("");
 					oss.clear();
-					STR_P("[Returning r]");
 					return r;
 				default:
 					oss << c;
@@ -490,7 +450,6 @@ namespace CCRepl {
 				switch (c) {
 				case '"':
 					AddToken();
-					STR_P("[Quote>Await]");
 					st = State::AwaitComma;
 					continue;
 				case '\\':
@@ -506,7 +465,6 @@ namespace CCRepl {
 				switch (c) {
 				case '}':
 					AddToken();
-					STR_P("[Brace>Await]");
 					st = State::AwaitComma;
 					continue;
 				case '\\':
@@ -527,7 +485,7 @@ namespace CCRepl {
 			case State::AwaitComma: {
 				if (WhiteSpace.contains(c)) continue;
 				switch (c) {
-				case ',': st = State::Inter; STR_P("[Await>Inter]"); continue;
+				case ',': st = State::Inter; continue;
 				case ')':
 					if (!oss.str().empty()) AddToken();
 					return r;
@@ -552,7 +510,6 @@ namespace CCRepl {
 	}
 
 	CommandTokens TokenizeCmd(const std::string& text, std::size_t& i) {
-		STR_P(STR_VAR(i));
 		enum class State {
 			Cmd,
 			Opt
@@ -572,7 +529,7 @@ namespace CCRepl {
 			};
 
 		// Starting on the first non-whitespace one.
-		for (i; i < text.size(); i++) {
+		for (; i < text.size(); i++) {
 			char c = text[i];
 			switch (st) {
 
@@ -585,7 +542,6 @@ namespace CCRepl {
 				case '\t': cmdss << '.'; continue;
 
 				case '#': // Block comment
-					STR_P("Should start block comment");
 					IgnoreUntil(text, i, '#');
 					continue;
 
@@ -597,13 +553,11 @@ namespace CCRepl {
 				case '(': // Start arguments
 					tokens.commandHead = RmDoubleDot(cmdss.str());
 					tokens.args = TokenizeArgs(text, i);
-					STR_P("Set cmd & args:", STR_VAR(tokens.commandHead), STR_PRINT_V(tokens.args));
 					st = State::Opt;
 					continue;
 
 				case ';': // Command with no arguments.
 					tokens.commandHead = RmDoubleDot(cmdss.str());
-					STR_P("Returning due to ';', command with no arguments", STR_VAR(tokens.commandHead));
 					return tokens;
 
 				default:
