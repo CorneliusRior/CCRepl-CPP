@@ -9,8 +9,6 @@
 #include "ReplException.h"
 #include "str.h"
 
-#define SCRIPT_ERROR(msg) \
-	throw ScriptException(std::format("Script Error (Statement #{}, Line #{}, Char {} '{}'): {}", statementIndex, currentLine, i, c, msg))
 
 namespace CCRepl {
 

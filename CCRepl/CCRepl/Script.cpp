@@ -162,274 +162,507 @@ namespace CCRepl {
 		New paragraphs or '\n' are allowed everywhere, unless we have some reason to believe that it's in a quote or brackets or something, we ignore it.
 		Otherwise, we follow the general rules of TokenizaParen.
 		Like TokenizeParen, we're not doing UTF-8 stuff, just normal input.
+
+		v1.1: Adding keywords (for now, just @REPEAT).
+		Putting "@" in InterStmt will do keyword. Continue until the next ' ', that has to match a keyword.
+		To Start off, we'll just have "Repeat", case insensitive.
 		*/
 
 		std::vector<ScriptToken> r;
 		std::size_t scriptLength = text.size();
 		if (scriptLength == 0) return r;
 
-		std::size_t statementIndex = 0;
-		std::size_t currentLine = 1;
-		CommandTokens currentToken;
-		ScriptToken currentStatement;
+		//std::size_t statementIndex = 0;
+		//CommandTokens currentToken;
+		//ScriptToken currentStatement;
 
-		std::ostringstream cmdss;
-		std::ostringstream argss;
-		std::ostringstream optss;
+		//std::ostringstream cmdss;
+		//std::ostringstream argss;
+		//std::ostringstream optss;
 
-		std::unordered_set<char> dots = { '.', ' ', ',', '/', '\n', '\t', '\r' };
+		STR_P("Started");
+		STR_P(text);
+
+		//std::unordered_set<char> dots = { '.', ' ', ',', '/', '\n', '\t', '\r' };
 		std::unordered_set<char> whiteSpace = { ' ', '\n', '\t', '\r' };
 
 		auto NextChar = [&scriptLength, &text](std::size_t i, char c, std::size_t steps = 1) {
 			return i + steps < scriptLength && text[i + steps] == c;
 			};
-		auto AddArg = [&currentToken, &argss]() {
-			currentToken.args.push_back(argss.str());
-			argss.str("");
-			argss.clear();
-			};
-		auto AddOpt = [&currentToken, &optss]() {
-			currentToken.opts.push_back(optss.str());
-			optss.str("");
-			optss.clear();
-			};
+
+		//auto AddArg = [&currentToken, &argss]() {
+		//	currentToken.args.push_back(argss.str());
+		//	argss.str("");
+		//	argss.clear();
+		//	};
+		//auto AddOpt = [&currentToken, &optss]() {
+		//	currentToken.opts.push_back(optss.str());
+		//	optss.str("");
+		//	optss.clear();
+		//	};
 
 		enum class State {
-			CmtLine,		// Comment
-			CmtBlock,
 			InterStmt,		// Between statements (comments & cmd allowed)
-			Cmd,			// CmdHead
-			CmdInter,
-			ArgInter,
-			Free,			// Comma seperated
-			Quote,			// Quote seperated
-			Brace,			// Brace seperated { } (more formatting)
-			AwaitComma,		// After quote or brace, throws if next not space, comma, \n
-			Opt,			// Reading an option
-			OptInter		// Between an option.
+			Keyword			// In process of getting it, ends on ' '
 		};
 		State st = State::InterStmt;
 
-		auto AddStmt = [&]() {
-			currentToken.commandHead = str::Trim(cmdss.str(), '.');
-			cmdss.str("");
-			cmdss.clear();
+		auto KeywordRepeat = [&](std::size_t& i) {
+			STR_P("KeywordRepeat called", STR_VAR(i));
+			enum class RptState {
+				Vars,		// Defining variables
+				Scope		// Scope what we repeat
+			};
+			RptState rst = RptState::Vars;
 
-			if (!argss.str().empty()) AddArg();
-			if (!optss.str().empty()) AddOpt();
+			std::string scope;
+			std::size_t scopeStart;
+			std::size_t scopeEnd;
+			std::vector<std::string> varNames;
+			std::map<std::string, std::vector<std::string>> repeatVars;
 
-			currentStatement.tokens = currentToken;
-			currentStatement.endLine = currentLine;
-			r.push_back(currentStatement);
+			// Starts on the space. Make new loop to define the variables:
+			for (i; i < scriptLength && scope.empty(); i++) {
+				char c = text[i];
+				STR_W(c);
+				switch (rst) {
 
-			CommandTokens newTk{};
-			ScriptToken newSt{};
-			currentToken = newTk;
-			currentStatement = newSt;
+				case RptState::Vars:
+					if (whiteSpace.contains(c)) continue;
+					switch (c) {
 
-			st = State::InterStmt;
+					case '[': {
+						std::string name = StringUntil(text, i, ']', true);
+						STR_P("VarName defined:", STR_VAR(name));
+						IgnoreUntil(text, i, '(');
+						repeatVars[name] = TokenizeArgs(text, i);
+						varNames.push_back(name);
+						STR_P(STR_PRINT_V(repeatVars[name]));
+						break;
+					}
+
+					case '{': {
+						rst = RptState::Scope;
+						STR_P("Scoping!");
+						scopeStart = i + 1;
+						continue;
+					}
+
+					case ',': continue;
+
+					default: SCRIPT_ERROR("Unexpected char: " + c);
+					}
+					continue;
+
+				case RptState::Scope: {
+					if (WhiteSpace.contains(c)) continue;
+					STR_P(STR_VAR(c));
+					if (c == '}') {
+						scopeEnd = i;
+						scope = text.substr(scopeStart, scopeEnd - scopeStart);
+						STR_P("Finished Scoping", STR_VAR(scope));
+					}
+					else TokenizeCmd(text, i);
+					continue;
+				}
+
+
+				} // end switch (rst)	
+			} // end of loop
+
+			// Scope defined now. Expand to a string, then tokenize it:
+			std::ostringstream oss;
+			for (const auto& combo : CartesianProduct(varNames, repeatVars)) {
+				std::string gen = scope;
+				for (const auto& [var, val] : combo) {
+					gen = str::ReplaceAll(gen, var, val);
+				}
+				oss << gen;
+			}
+
+			// Tokenize (we will just copy main loop for now):
+			State tst = State::InterStmt;
+			std::string expanded = oss.str();
+
+			for (std::size_t e = 0; e < expanded.size(); e++) {
+				char c = expanded[e];
+				switch (tst) {
+
+				case State::InterStmt: {
+					if (whiteSpace.contains(c)) continue;
+					switch (c) {
+					case '@':
+						tst = State::Keyword;
+						continue;
+					case '/':
+						if (e + 1 >= expanded.size() || expanded[e] != '//') SCRIPT_ERROR("(In expanded): Expected '/' (\"//\" denotes line comment).");
+						IgnoreUntil(expanded, e, '\n');
+						continue;
+					case '#':
+						if (!IgnoreUntil(expanded, e, '#')) SCRIPT_ERROR("(In expanded): End of script, unclosed block comment, expected '#'.");
+						continue;
+					case ';':
+						SCRIPT_ERROR("(In expanded): ';': Expected statement.");
+					default:
+						std::size_t startLine = FindLine(text, i);
+						CommandTokens tokens = TokenizeCmd(expanded, e);
+						r.push_back(ScriptToken{
+							tokens,
+							r.size(),
+							startLine,
+							startLine
+							});
+						st = State::InterStmt;
+						continue;
+					}
+
+				}
+				}
+			}
 			};
 
 		for (std::size_t i = 0; i < scriptLength; i++) {
 			char c = text[i];
-			if (c == '\n') currentLine++;
-
+			DB(c);
 			switch (st) {
 
-			case State::CmtLine:
-				if (c == '\n') st = State::InterStmt;
-				continue;
-
-			case State::CmtBlock:
-				if (c == '#') st = State::InterStmt;
-				continue;
-
-			case State::InterStmt:
+			case State::InterStmt: {
+				STR_P("Mainloop, State::InterStmt", STR_VAR(c));
 				if (whiteSpace.contains(c)) continue;
 				switch (c) {
+				case '@':
+					st = State::Keyword;
+					continue;
 				case '/':
-					if (NextChar(i, '/')) st = State::CmtLine;
-					else SCRIPT_ERROR("Expected '/' (\"//\" denotes line comment).");
+					if (!NextChar(i, '/')) SCRIPT_ERROR("Expected '/' (\"//\" denotes line comment).");
+					IgnoreUntil(text, i, '\n');
 					continue;
 				case '#':
-					st = State::CmtBlock;
+					if (!IgnoreUntil(text, i, '#')) SCRIPT_ERROR("End of script, unclosed block comment, expected '#'.");
 					continue;
 				case ';':
 					SCRIPT_ERROR("';': Expected statement.");
 				default:
-					currentStatement.startLine = currentLine;
-					currentStatement.stmtIndex = statementIndex++;
-					cmdss << c;
-					st = State::Cmd;
-					continue;
-				}
-
-			case State::Cmd:
-				if (dots.contains(c)) {
-					cmdss << '.';
-					st = State::CmdInter;
-					continue;
-				}
-				switch (c) {
-				case '(':
-					currentToken.commandHead = cmdss.str();
-					st = State::ArgInter;
-					continue;
-				case ';':
-					AddStmt();
-					continue;
-				default:
-					cmdss << c;
-					continue;
-				}
-
-			case State::CmdInter:
-				if (dots.contains(c)) continue;
-				switch (c) {
-				case '(':
-					currentToken.commandHead = cmdss.str();
-					st = State::ArgInter;
-					continue;
-				case ';':
-					AddStmt();
-					continue;
-				default:
-					cmdss << c;
-					st = State::Cmd;
-					continue;
-				}
-
-			case State::ArgInter:
-				if (whiteSpace.contains(c)) continue;
-				switch (c) {
-				case ',': AddArg(); continue; // Blank argument;
-				case ')': st = State::OptInter;	continue;	// End of arguments (no new)
-				case '"': st = State::Quote;	continue;
-				case '{': st = State::Brace;	continue;
-				default:
-					st = State::Free;
-					argss << c;
-					continue;
-				}
-				continue;
-
-			case State::Free:
-				switch (c) {
-				case ',':
-					AddArg();
-					st = State::ArgInter;
-					continue;
-				case ')':
-					// This statement in case it is the last argument in a statement and we end it with \n instead of ','
-					if (text[i - 1] == '\n') {
-						currentToken.args.push_back(str::DropLastUtf8(argss.str(), 1));
-						argss.str("");
-						argss.clear();
-					}
-					else AddArg();
-					st = State::OptInter;
-					continue;
-				default:
-					argss << c;
-					continue;
-				}
-
-			case State::Quote:
-				switch (c) {
-				case '"':
-					AddArg();
-					st = State::AwaitComma;
-					continue;
-				case '\\':
-					argss << (i + 1 < scriptLength ? text[++i] : '\\');
-					continue;
-				default:
-					argss << c;
-					continue;
-				}
-
-			case State::Brace:
-				switch (c) {
-				case '}':
-					AddArg();
-					st = State::AwaitComma;
-					continue;
-				case '\\':
-					if (i + 1 < scriptLength) {
-						switch (text[++i]) {
-						case 'n': argss << '\n';	continue;
-						case 't': argss << '\t';	continue;
-						default: argss << text[i];	continue;
-						}
-					}
-					else argss << c; continue;
-				default:
-					argss << c;
-					continue;
-				}
-
-			case State::AwaitComma:
-				if (whiteSpace.count(c)) continue;
-				switch (c) {
-				case ',': st = State::ArgInter; continue;
-				case ')': st = State::OptInter; continue;
-				default: SCRIPT_ERROR("Expected ',' or ')' (after } or '\"'");
-				}
-				continue;
-
-			case State::Opt:
-				if (whiteSpace.contains(c)) {
-					AddOpt();
-					st = State::OptInter;
-					continue;
-				}
-				switch (c) {
-				case ';':
-					AddStmt();
-					continue;
-				default:
-					optss << c;
-					continue;
-				}
-
-			case State::OptInter:
-				if (whiteSpace.count(c)) continue;
-				switch (c) {
-				case ';':
-					AddStmt();
-					continue;
-				default:
-					st = State::Opt;
-					optss << c;
+					std::size_t startLine = FindLine(text, i);
+					CommandTokens tokens = TokenizeCmd(text, i);
+					r.push_back(ScriptToken{
+						tokens,
+						r.size(),
+						startLine,
+						FindLine(text, i)
+						});
+					st = State::InterStmt;
 					continue;
 				}
 			}
+			
+			case State::Keyword: {
+				STR_P("Mainloop, State::Keyword", STR_VAR(c));
+				std::string keyword = str::ToUpper(StringUntil(text, i, ' ', false));
+
+				// If this expands to more than like 3 or 4 keywords, make this a whole switch thing:
+				if (keyword == "REPEAT") {
+					// Deal with it here. Do it as its own loop? Lambda? External function? lambda for now.
+					STR_P("**REPEAT**");
+					KeywordRepeat(i);
+				}
+				else SCRIPT_ERROR("Unknown keyword: " + keyword);
+
+				continue;
+			}
+
+			}			
 		}
 
 		// Ensure no ending errors:
-		std::size_t i = scriptLength - 1;
-		char c = text[i];
-		switch (st) {
-		case State::CmtBlock:
-			SCRIPT_ERROR("End of script, unclosed block comment: Expected '#'.");
-		case State::Cmd:
-		case State::CmdInter:
-			SCRIPT_ERROR("End of script, unclosed command head: Expected '(' or ';'.");
-		case State::ArgInter:
-		case State::Free:
-		case State::AwaitComma:
-			SCRIPT_ERROR("End of script, unclosed arguments: Expected ')'.");
-		case State::Quote:
-			SCRIPT_ERROR("End of script, unclosed quotes: Expected '\"'.");
-		case State::Brace:
-			SCRIPT_ERROR("End of script, unclosed braces: Expected '}'.");
-		case State::Opt:
-		case State::OptInter:
-			SCRIPT_ERROR("End of script, unclosed command: Expected ';'.");
-		default: break;
-		}
+		//std::size_t i = scriptLength - 1;
 
 		// No adding in things at the last minute, just put ';' at the end.
+		return r;
+	}
+
+	std::string StringUntil(const std::string& text, std::size_t& i, char c, bool includeLast) {
+		std::ostringstream oss;
+		while (i < text.size()) {
+			if (text[i] == c) {
+				if (includeLast) oss << text[i];
+				return oss.str();
+			}
+			oss << text[i++];
+		}		
+		return oss.str(); // Hit end of text
+	}
+
+	std::string StringUntil(const std::string& text, std::size_t& i, std::vector<char> cs, bool includeLast) {
+		std::ostringstream oss;
+		while (i < text.size()) {
+			if (str::InVector(text[i], cs, false)) {
+				if (includeLast) oss << text[i];
+				else (i--);
+				return oss.str();
+			}
+			oss << text[i++];
+		}
+		return oss.str(); // Hit end of text
+	}
+
+	bool IgnoreUntil(const std::string& text, std::size_t& i, char c) {
+		while (i++ < text.size()) {
+			if (text[i] == c) return true;
+		}
+		return false; // Hit end of text
+	}
+
+	char IgnoreUntil(const std::string& text, std::size_t& i, std::vector<char> cs) {
+		while (i++ < text.size()) if (str::InVector(text[i], cs, false)) return text[i];
+		throw std::runtime_error("End of script");
+	}
+
+	std::vector<std::string> TokenizeArgs(const std::string& text, std::size_t& i) {
+		if (++i >= text.size()) SCRIPT_ERROR("End of script, unclosed args.");
+		STR_P(STR_VAR(i), STR_VAR(text[i]));
+		enum class State {
+			Inter,
+			Free,
+			Quote,
+			Brace,
+			AwaitComma
+		};
+		State st = State::Inter;
+
+		std::vector<std::string> r;
+		std::ostringstream oss;
+		auto AddToken = [&oss, &r] {
+			r.push_back(oss.str());
+			STR_P("Added token", STR_VAR(oss.str()));
+			oss.str("");
+			oss.clear();
+			};
+
+		STR_P("Entering mainloop:");
+		for (i; i < text.size(); i++) {
+			char c = text[i];
+			STR_W(c);
+			switch (st) {
+
+			case State::Inter: {
+				if (WhiteSpace.contains(c)) continue;
+				switch (c) {
+				case ')':
+					if (!oss.str().empty()) AddToken();
+					return r;
+				case ',': AddToken();			continue;	// Blank argument;
+				case '"': st = State::Quote;	STR_P("[Inter>Quote]"); continue;
+				case '{': st = State::Brace;	STR_P("[Inter>Brace]"); continue;
+				default:
+					st = State::Free;
+					STR_P("[Inter>Free]");
+					oss << c;
+					continue;
+				}
+				continue;
+			}
+
+			case State::Free: {
+				switch (c) {
+				case ',':
+					// No new lines at start and end of free.
+					r.push_back(str::Trim(oss.str(), '\n'));
+					oss.str("");
+					oss.clear();
+					STR_P("[Free>Inter]");
+					st = State::Inter;
+					continue;
+				case ')':
+					// No new lines at start and end of free.
+					r.push_back(str::Trim(oss.str(), '\n'));
+					oss.str("");
+					oss.clear();
+					STR_P("[Returning r]");
+					return r;
+				default:
+					oss << c;
+					continue;
+				}
+			}
+
+			case State::Quote: {
+				switch (c) {
+				case '"':
+					AddToken();
+					STR_P("[Quote>Await]");
+					st = State::AwaitComma;
+					continue;
+				case '\\':
+					oss << (i + 1 < text.size() ? text[++i] : '\\');
+					continue;
+				default:
+					oss << c;
+					continue;
+				}
+			}
+
+			case State::Brace: {
+				switch (c) {
+				case '}':
+					AddToken();
+					STR_P("[Brace>Await]");
+					st = State::AwaitComma;
+					continue;
+				case '\\':
+					if (i + 1 < text.size()) {
+						switch (text[++i]) {
+						case 'n': oss << '\n';	continue;
+						case 't': oss << '\t';	continue;
+						default: oss << text[i];	continue;
+						}
+					}
+					else oss << c; continue;
+				default:
+					oss << c;
+					continue;
+				}
+			}
+
+			case State::AwaitComma: {
+				if (WhiteSpace.contains(c)) continue;
+				switch (c) {
+				case ',': st = State::Inter; STR_P("[Await>Inter]"); continue;
+				case ')':
+					if (!oss.str().empty()) AddToken();
+					return r;
+				default: SCRIPT_ERROR("Expected ',' or ')' (after } or '\"'");
+				}
+				continue;
+			}
+
+			}
+		}
+		
+		// End without closing ')':
+		switch (st) {
+		case State::Inter:
+		case State::Free:
+		case State::AwaitComma: SCRIPT_ERROR("End of script, unclosed arguments: Expected ')'.");
+		case State::Quote: SCRIPT_ERROR("End of script, unclosed quotes: Expected '\"'.");
+		case State::Brace: SCRIPT_ERROR("End of script, unclosed braces: Expected '}'.");
+		default: break;
+		}
+		SCRIPT_ERROR("End of script, unknown error, ArgumentTokenization.");
+	}
+
+	CommandTokens TokenizeCmd(const std::string& text, std::size_t& i) {
+		STR_P(STR_VAR(i));
+		enum class State {
+			Cmd,
+			Opt
+		};
+		State st = State::Cmd;
+
+		CommandTokens tokens;
+		std::ostringstream cmdss;
+		std::ostringstream optss;
+
+		auto RmDoubleDot = [](std::string cmd) {
+			cmd.erase(std::unique(cmd.begin(), cmd.end(),
+				[](char a, char b) { return a == '.' && b == '.'; }),
+				cmd.end()
+			);
+			return str::Trim(cmd, {' ', '.'});
+			};
+
+		// Starting on the first non-whitespace one.
+		for (i; i < text.size(); i++) {
+			char c = text[i];
+			switch (st) {
+
+			case State::Cmd: {
+				switch (c) {
+
+				case '.':
+				case ' ':
+				case '\n': // Dots
+				case '\t': cmdss << '.'; continue;
+
+				case '#': // Block comment
+					STR_P("Should start block comment");
+					IgnoreUntil(text, i, '#');
+					continue;
+
+				case '/': // Line comment if 2, dot if one. 
+					if (i + 1 < text.size() && text[i + 1] == '/') IgnoreUntil(text, i, '\n');
+					else cmdss << '.';
+					continue;
+
+				case '(': // Start arguments
+					tokens.commandHead = RmDoubleDot(cmdss.str());
+					tokens.args = TokenizeArgs(text, i);
+					STR_P("Set cmd & args:", STR_VAR(tokens.commandHead), STR_PRINT_V(tokens.args));
+					st = State::Opt;
+					continue;
+
+				case ';': // Command with no arguments.
+					tokens.commandHead = RmDoubleDot(cmdss.str());
+					STR_P("Returning due to ';', command with no arguments", STR_VAR(tokens.commandHead));
+					return tokens;
+
+				default:
+					cmdss << c;
+					continue;
+				
+				}
+				continue;
+			}
+
+			case State::Opt: {
+				switch (c) {
+				case '.':
+				case ' ':
+				case '\n':
+				case '\t': continue;
+				case ';': return tokens;
+				default:
+					tokens.opts.push_back(StringUntil(text, i, { ' ', ';' }, false));
+					continue;
+				}
+				continue;
+			}
+
+			};
+		}
+
+		// End without cosing ';':
+		switch (st) {
+		case State::Cmd: SCRIPT_ERROR("End of script, unclosed Command: Expected ';'");
+		case State::Opt: SCRIPT_ERROR("End of script, unclosed Options: Expected ';'");
+		}
+		SCRIPT_ERROR("End of script, unknown error (TokenizeCmd).");
+	}
+
+	std::size_t FindLine(const std::string& text, const std::size_t& pos) {
+		if (pos > text.size()) throw std::runtime_error(std::format("FindLine: Pos exceeds text length. {} >= {}", pos, text.size()));
+		std::size_t line = 1;
+		for (std::size_t i = 0; i < text.size() && i <= pos; i++) {
+			if (text[i] == '\n') line++;
+		}
+		return line;
+	}
+
+	std::vector<std::map<std::string, std::string>> CartesianProduct(const std::vector<std::string>& varNames, const std::map<std::string, std::vector<std::string>>& repeatVars) {
+		std::vector<std::map<std::string, std::string>> r = {{}}; // one empty combination
+		for (const std::string& var : varNames) {
+			const std::vector<std::string>& values = repeatVars.at(var);
+			std::vector<std::map<std::string, std::string>> next;
+
+			for (const auto& existing : r) {
+				for (const std::string& val : values) {
+					auto combo = existing;
+					combo[var] = val;
+					next.push_back(std::move(combo));
+				}
+			}
+			r = std::move(next);
+		}
 		return r;
 	}
 }

@@ -8,6 +8,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <Windows.h> // delete after
+
+#define DB(msg) str::db(msg)
 
 #define STR_P(...) do { \
     std::string file = __FILE__; \
@@ -16,6 +19,8 @@
         + ", in " + __func__ + "()): "; \
     str::PrintArgs(loc, __VA_ARGS__); \
 } while (0)
+
+#define STR_W(msg) str::pol(msg)
 
 #define STR_PRINT_V(vec) \
     str::PresentList(vec, "std::vector<std::string> " #vec " = ", "\",\n  \"", "{\n  \"", "\"\n}")
@@ -95,6 +100,8 @@ namespace str {
     std::string Pct(const double num, const double denom, std::size_t prec = 1);
     // Returns double as a percentage, e.g. 0.25 -> "25%".
     std::string AsPct(const double num, std::size_t prec = 1);
+    // Replaces every instance of 'from' in text with 'to'.
+    std::string ReplaceAll(const std::string& text, const std::string& from, const std::string& to);
 
     // Returns true if texts are equal, case insensitive by default.
     bool Equals(const std::string& text1, const std::string& text2, bool caseSensitive = false);
@@ -107,6 +114,8 @@ namespace str {
     std::size_t MaxLength(const std::string& text);
     // returns true if text is in the string vector vec, case insensitive by default.
     bool InVector(const std::string& text, const std::vector<std::string>& vec, bool caseSensitive = false);
+    // returns true if c is in the char vector vec, case insensitive by default.
+    bool InVector(const char c, const std::vector<char>& vec, bool caseSensitive = false);
     // Split string into a string vector by a character, e.g. str::SplitBy(text, '\n');.
     std::vector<std::string> SplitBy(const std::string& text, char c = ' ');
     // Built a string vector in which every line of v2 is to the right of v1.
@@ -132,6 +141,10 @@ namespace str {
     std::string ReadTextFile(const std::string& path);
 
     void p(std::string text);
+    void pol(std::string text);
+    void pol(char c);
+    void db(std::string text);
+    void db(char c_);
 
     std::vector<std::string> SepArgNames(std::string argNames);
 

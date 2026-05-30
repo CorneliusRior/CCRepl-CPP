@@ -55,9 +55,9 @@ namespace str {
 	std::string ToSingleLine(const std::string& text, bool removeDuplicates) {
 		std::string r = text;
 		std::replace_if(
-			r.begin(), 
-			r.end(), 
-			[](char c) { return c == '\n' || c == '\r' || c == '\n\r';}, 
+			r.begin(),
+			r.end(),
+			[](char c) { return c == '\n' || c == '\r' || c == '\n\r';},
 			' '
 		);
 
@@ -147,9 +147,9 @@ namespace str {
 		);
 
 		// Remove duplicates
-		if (removeDuplicates) 
+		if (removeDuplicates)
 			r.erase(std::unique(r.begin(), r.end(),
-				[](char a, char b) { return a == '.' && b == '.'; }), 
+				[](char a, char b) { return a == '.' && b == '.'; }),
 				r.end()
 			);
 
@@ -231,7 +231,7 @@ namespace str {
 	std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t total, bool oneline) {
 		if (col >= total) throw std::runtime_error("str::ToIndex(): col exceeds total.");
 		std::ostringstream oss;
-		
+
 		if (oneline) return TruncatePadRight(key, col) + Truncate(value, total - col);
 		else {
 			std::vector<std::string> lv = ToIndexLineV(key, value, col, total, false);
@@ -255,6 +255,16 @@ namespace str {
 		return ToString(num * 100, prec) + "%";
 	}
 
+	std::string ReplaceAll(const std::string& text, const std::string& from, const std::string& to) {
+		std::string r = text;
+		std::size_t pos = 0;
+		while ((pos = r.find(from, pos)) != std::string::npos) {
+			r.replace(pos, from.size(), to);
+			pos += to.size(); // advance past replacement to prevent recursion.
+		}
+		return r;
+	}
+
 	bool Equals(const std::string& text1, const std::string& text2, bool caseSensitive) {
 		if (caseSensitive) return text1 == text2;
 		return ToLower(text1) == ToLower(text2);
@@ -263,23 +273,23 @@ namespace str {
 	// Does standard begin with text?
 	bool StartsWith(const std::string& standard, const std::string& text, bool caseSensitive) {
 		if (caseSensitive) return standard.size() >= text.size() && std::equal(text.begin(), text.end(), standard.begin());
-		return standard.size() >= text.size() && 
+		return standard.size() >= text.size() &&
 			std::equal(
 				text.begin(), text.end(), standard.begin(),
 				[](char a, char b) {
 					return std::tolower((unsigned char)a) == std::tolower((unsigned char)b);
 				}
-			);		
-	}	
+			);
+	}
 
 
 	// Vector functions:
-	
+
 	std::size_t MaxLength(const std::vector<std::string>& vec) {
 		std::size_t r = StrLength(
 			*std::max_element(
 				vec.begin(), vec.end(),
-				[] (const std::string & a, const std::string & b) {
+				[](const std::string& a, const std::string& b) {
 					return StrLength(a) < StrLength(b);
 				}
 			)
@@ -295,6 +305,11 @@ namespace str {
 	bool InVector(const std::string& text, const std::vector<std::string>& vec, bool caseSensitive) {
 		if (caseSensitive) return std::any_of(vec.begin(), vec.end(), [&](const std::string& s) { return s == text; });
 		else return std::any_of(vec.begin(), vec.end(), [&](const std::string& s) { return ToLower(s) == ToLower(text); });
+	}
+
+	bool InVector(const char c, const std::vector<char>& vec, bool caseSensitive) {
+		if (caseSensitive) return std::any_of(vec.begin(), vec.end(), [&](const char& vc) { return vc == c; });
+		else return std::any_of(vec.begin(), vec.end(), [&](const char& vc) { return std::tolower(vc) == std::tolower(vc); });
 	}
 
 	std::vector<std::string> SplitBy(const std::string& text, char c) {
@@ -494,6 +509,30 @@ namespace str {
 #else
 		std::cout << text << std::endl; 
 #endif
+	}	
+
+	void pol(std::string text) {
+#ifdef NDEBUG
+
+#else
+		std::cout << text;
+#endif
+	}
+
+	void pol(char c) {
+#ifdef NDEBUG
+
+#else
+		std::cout << c;
+#endif
+	}
+
+	void db(std::string text) {
+		OutputDebugStringA(text.c_str());
+	}
+
+	void db(char c) {
+		OutputDebugStringA(std::string(1, c).c_str());
 	}
 
 	std::vector<std::string> SepArgNames(std::string argNames) {
