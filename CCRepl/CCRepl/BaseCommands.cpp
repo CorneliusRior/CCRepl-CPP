@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <ranges>
 #include <set>
+#include "BaseCommands.h"
 #include "CommandBuilder.h"
 #include "CommandSet.h"
 #include "fmt.h"
@@ -10,412 +11,7 @@
 #include "ScriptService.h"
 
 namespace CCRepl {
-
-	CMD_H(Handler) {
-		ctx.WriteLine("Not yet implemented.");
-	}
-
-	CMD_H(About) {
-		ctx.WriteLine(ctx.AboutStr);
-	}
-
-	CMD_H(Help) {
-
-		// Create filtered map (shows all if string is empty):
-		std::optional<std::string> inputKey = args.Get<std::string>(0);
-		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
-		std::string sk = str::ToLower(ik);								// Lower case, for searching.
-		auto filtered = ctx.CommandReg | std::views::filter(
-			[&sk](const auto& it) { return it.first.starts_with(sk); }
-		);
-
-		std::size_t count = std::ranges::distance(filtered);
-		if (count == 0) {
-			ctx.WriteLine(std::format("No commands found starting with '{}'. Try 'Help.Alias' for possible aliases.", ik));
-			return;
-		}
-
-		// Determine mode:
-		std::optional<bool> oneline;
-		bool olDefault;
-		int olOpt = args.FirstOptionStart("-o", "-m");
-		switch (olOpt) {
-		case 0: oneline = true;				break;
-		case 1: oneline = false;			break;
-		default: oneline = std::nullopt;	break;
-		}
-
-		HelpAttribute att;
-		int attMode = args.FirstOptionStart("-a", "-d", "-e", "-f", "-i", "-l", "-u");
-		switch (attMode) {
-		case 0:		att = HelpAttribute::Aliases;			 olDefault = true;	break;
-		case 1:		att = HelpAttribute::Description;		 olDefault = true;	break;
-		case 2:		att = HelpAttribute::Examples;			 olDefault = false;	break;
-		case 3:		att = HelpAttribute::Full;				 olDefault = false;	break;
-		case 4:		att = HelpAttribute::Implemented;		 olDefault = true;	break;
-		case 5:		att = HelpAttribute::LongDescription;	 olDefault = false;	break;
-		case 6:		att = HelpAttribute::Usage;				 olDefault = true;	break;
-		default:	
-			att = args.HasOptStart("-o") ? HelpAttribute::Description : inputKey.has_value() ? HelpAttribute::Full : HelpAttribute::Description;
-			olDefault = true; 
-			break;
-		}
-
-		bool group = args.HasOptStart("-g");
-
-		// Define col here w/ max:
-		std::size_t col = 0;
-		for (const auto& it : filtered) if (it.first.size() > col) col = it.first.size();
-		col += 5;
-		std::size_t total = 180 - col;
-		std::ostringstream oss;
-
-		// Write it out:
-		if (group) {
-			std::set<std::string> seen;
-			std::vector<std::string> groups;
-			for (const auto& it : filtered) {
-				std::string group = it.second.Group;
-				if (seen.insert(group).second) groups.push_back(group);
-			}
-
-			// Sort groups:
-			std::sort(groups.begin(), groups.end(),
-				[](const auto& a, const auto& b) {
-					auto rank = [](const auto& s) {
-						if (s == "Base") return 0;
-						if (s == "Ungrouped") return 2;
-						return 1;
-						};
-					int ra = rank(a);
-					int rb = rank(b);
-					if (ra != rb) return ra < rb;
-					return a < b;
-				});
-
-			for (std::string g : groups) {
-				auto gfiltered = ctx.CommandReg | std::views::filter(
-					[&sk, &g](const auto& it) { return it.first.starts_with(sk) && it.second.Group == g;}
-				);
-
-				// Print banner:
-				oss << "\n * " << g << " (" << std::ranges::distance(gfiltered) << " total):\n";
-
-				// Print each line:
-				for (const auto& it : gfiltered)
-					oss << it.second.PrintIndexLine(att, col, total, oneline.value_or(olDefault)) << '\n';
-			}
-		}
-		else {
-			for (const auto& it : filtered) 
-				oss << it.second.PrintIndexLine(att, col, total, oneline.value_or(olDefault)) << '\n';
-		}
-		
-
-		// Print announcement:
-		std::string beginStmt = inputKey.has_value() ? std::format(" beginning with '{}'", ik) : "";
-		if (att == HelpAttribute::Full) ctx.WriteLine(std::format("Printing full information for all commands{} ({} total):\n", beginStmt, count));
-		else ctx.WriteLine(std::format("Printing addresses and {} for all commands{} ({} total):\n", ToString(att), beginStmt, count));
-
-		ctx.WriteLine(oss.str());
-		// Test when you get back.
-	}
-
-	// Silly test, frankly you can disregard this one:
-	CMD_T(HelpTest) {
-		std::optional<std::string> inputKey = args.Get<std::string>(0);
-		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
-		std::string sk = str::ToLower(ik);								// Lower case, for searching
-		auto filtered = ctx.CommandReg | std::views::filter(
-			[&sk](const auto& it) { return it.first.starts_with(sk); }
-		);
-		std::size_t count = std::ranges::distance(filtered);
-		if (count == 0) {
-			ctx.WriteLine(std::format("No commands found starting with '{}'. Try 'Help.Alias' for possible aliases.", ik));
-			return false;
-		}
-		else return true;
-	}
-
-	CMD_H(HelpAlias) {
-
-		// Create filtered map (shows all if string is empty):
-		std::optional<std::string> inputKey = args.Get<std::string>(0);
-		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
-		std::string sk = str::ToLower(ik);								// Lower case, for searching.
-		auto filtered = ctx.AliasReg | std::views::filter(
-			[&sk](const auto& it) { return it.first.starts_with(sk); }
-		);
-
-		// Print announcement:
-		std::size_t count = std::ranges::distance(filtered);
-		if (count == 0) {
-			ctx.WriteLine(std::format("No commands or aliases found starting with '{}'.", ik));
-			return;
-		}
-		
-		// Define col.
-		std::size_t col = 0;
-		for (const auto& it : filtered) if (it.first.size() > col) col = it.first.size();
-		col += 5;
-		if (col > 90) col = 90;
-		std::size_t col2 = 180 - col;
-
-		std::ostringstream oss;
-
-		if (args.HasOptStart("-g")) {
-			std::set<std::string> seen;
-			std::vector<std::string> groups;
-			for (const auto& it : filtered) {
-				std::string group = it.second->Group;
-				if (seen.insert(group).second) groups.push_back(group);
-			}
-
-			// Sort groups:
-			std::sort(groups.begin(), groups.end(),
-				[](const auto& a, const auto& b) {
-					auto rank = [](const auto& s) {
-						if (s == "Base") return 0;
-						if (s == "Ungrouped") return 2;
-						return 1;
-						};
-					int ra = rank(a);
-					int rb = rank(b);
-					if (ra != rb) return ra < rb;
-					return a < b;
-				});
-
-			// Add each to string:
-			for (std::string g : groups) {
-				// Filter for group:
-				auto gfiltered = ctx.AliasReg | std::views::filter(
-					[&sk, &g](const auto& it) { return it.first.starts_with(sk) && it.second->Group == g;}
-				);
-
-				// Count:
-				std::size_t gcount = 0;
-				std::set<std::string> seenCmd;
-				for (const auto& it : gfiltered) {
-					std::string add = it.second->Address;
-					if (seenCmd.insert(add).second) gcount++;
-				}
-
-				// Print banner:
-				oss << "\n * " << g << " (" << std::ranges::distance(gfiltered) << " total aliases for " << gcount << " commands) :\n";
-
-				// Print each line:
-				for (const auto& it : gfiltered) 
-					oss << str::TruncatePadRight(it.first, col) + str::Truncate(it.second->Address, col2) << '\n';
-			}
-		}
-		else for (const auto& it : filtered)
-				oss << str::TruncatePadRight(it.first, col) + str::Truncate(it.second->Address, col2) << '\n';
-		
-		// Print banner:
-		if (inputKey) ctx.WriteLine(std::format("Printing all command names and aliases starting with '{}' ({} total):\n", ik, count));
-		else ctx.WriteLine(std::format("Print all command names and aliases ({} total):\n", count));
-		
-		// Print:
-		ctx.WriteLine(oss.str());
-
-		// Count unique commands:
-		std::size_t uniqueCmd = 0;
-		std::set<std::string> seenCmd;
-		for (const auto& it : filtered) {
-			std::string add = it.second->Address;
-			if (seenCmd.insert(add).second) uniqueCmd++;
-		}
-
-		// End box:
-		ctx.WriteLine();
-		std::ostringstream report;
-		report << count << " total aliases ";
-		if (inputKey.has_value()) report << "starting with '" << ik << "' found ";
-		report << "for " << uniqueCmd << " commands.";
-		ctx.WriteLine(fmt::TxtBoxCenter(report.str(), inputKey.has_value() ? ik : "All"));
-	}
-
-	CMD_H(HelpTree) {
-		std::optional<std::string> inputCmd = args.Get<std::string>(0);
-		HelpAttribute att;
-		int attMode = args.FirstOptionStart("-a", "-d", "-e", "-i", "-l", "-u");
-		switch (attMode) {
-		case 0: att = HelpAttribute::Aliases;			break;
-		case 1: att = HelpAttribute::Description;		break;
-		case 2: att = HelpAttribute::Examples;			break;
-		case 3: att = HelpAttribute::Implemented;		break;
-		case 4: att = HelpAttribute::LongDescription;	break;
-		case 5: att = HelpAttribute::Usage;				break;
-		default: att = HelpAttribute::None;				break;
-		}
-
-		if (!inputCmd) ctx.WriteLine(ctx.RootTree(att));
-		else {
-			ReplCommand* cmd = ctx.FindCommand(str::DotSeparated(*inputCmd));
-			std::size_t col = str::MaxLength(cmd->PrintTree("", "")) + 5;
-			ctx.WriteLine(cmd->PrintTree("", "", att, col));
-		}
-	}
-
-	CMD_H(CommandList) {
-		std::optional<std::string> inputKey = args.Get<std::string>(0);
-		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
-		std::string sk = str::ToLower(ik);								// Lower case, for searching.
-		auto filtered = ctx.CommandReg | std::views::filter(
-			[&sk](const auto& it) { return it.first.starts_with(sk); }
-		);
-		std::size_t count = std::ranges::distance(filtered);
-		if (count == 0) {
-			ctx.WriteLine(std::format("No commands found starting with '{}'. Try 'Help.Alias' for possible aliases.", ik));
-			return;
-		}
-		if (inputKey) ctx.WriteLine(std::format("Printing all commands beginning with '{}' ({} total):\n", ik, count));
-		else ctx.WriteLine(std::format("Printing all commands ({} total):\n", count));
-
-		std::ostringstream oss;
-		for (const auto& it : filtered) oss << it.first << '\n';
-		ctx.WriteLine(oss.str());
-	}
-
-	CMD_H(TestInput) {
-		std::string input = args.GetRequired<std::string>(0);
-		ctx.Test(input, args.HasOptStart("-r"));
-	}
-
-	CMD_H(ScriptHandler) {
-		// just occured to me that "mode" should be in commandargs instead of ctx, will change that.
-		bool PrintAll = args.HasOptStart("-p");
-
-		std::string path = args.GetRequired<std::string>(0);
-		std::string scriptTxt = CTX_WAIT_SPIN(std::string, str::ReadTextFile(path), std::format("Loading file '{}'", path), "Loaded.");
-		if (PrintAll) ctx.WriteLine(scriptTxt + "\n\n");
-		Script scp = CTX_WAIT_SPIN(Script, TextToScript(ctx, scriptTxt), "Generating Script", "Generated.");
-
-		if (args.IsMode(1)) {
-			if (args.HasOptStart("-f")) scp.Execute(ctx);
-			else {
-				if (scp.Test(ctx, !PrintAll)) {
-					ctx.WriteLine("Running...");
-					scp.Execute(ctx);
-				}
-				else ctx.WriteLine("Test failed, not running. Use option '-f' to force run if you believe this is a mistake.");
-			}
-		}
-		else scp.Test(ctx, !PrintAll);
-	}
-
-	// Listing
-	CMD_H(ScpSvcList) {
-		CCSS_SET_SVC();
-		switch (args.Mode()) {
-		case 1: {
-			std::optional<std::string> dir = args.Get<std::string>(0);
-			if (dir) ctx.WriteLine(svc->ListDir(*dir));
-			else ctx.WriteLine(svc->ListDir());
-			break;
-		}
-		case 2: {
-			ctx.WriteLine(svc->ListScripts(args.GetR<std::string>(0)));
-			break;
-		}
-		default:
-			throw ReplException("Unknown command mode: " + args.Mode());
-		}
-	}
-
-	// Loading & unloading
-	CMD_H(ScpSvcData) {
-		CCSS_SET_SVC();
-
-		switch (args.Mode()) {
-
-		// Load one
-		case 1: {			
-			std::string fileName = args.GetR<std::string>(0);
-			if (args.HasOptStart("-a")) CTX_WAIT_SPIN(bool, svc->LoadScriptAbs(fileName), std::format("Loading file '{}'", fileName), "Loaded.");
-			else CTX_WAIT_SPIN(bool, svc->LoadScript(fileName), std::format("Loading file '{}'", fileName), "Loaded.");
-			if (!args.HasOptStart("-q")) ctx.WriteLine(svc->ListScripts(""));
-			break;
-		}
-
-		// Load all
-		case 2: {
-			if (args.HasOptStart("-a")) CTX_WAIT_SPIN(bool, svc->LoadAllAbs(args.GetR<std::string>(0)), "Loading", "Loaded.");
-			else CTX_WAIT_SPIN(bool, svc->LoadAll(args.GetOr<std::string>(0, "")), "Loading", "Loaded.");
-			if (!args.HasOptStart("-q")) ctx.WriteLine(svc->ListScripts(""));
-			break;
-		}
-
-		// Unload one
-		case 3: {
-			std::string scpName = args.GetR<std::string>(0);
-			if (svc->HasScript(scpName)) {
-				if (args.HasOptStart("-f") || ctx.Confirm(std::format("Delete script '{}'? (Y/N): ", scpName))) {
-					if (svc->Unload(scpName)) if (!args.HasOptStart("-q")) ctx.WriteLine(std::format("Deleted script '{}'", scpName));
-					else throw ReplException("No script deleted.");
-				}
-				else ctx.WriteLine("Cancelled.");
-			}
-			else ctx.WriteLine(std::format("No script with name '{}'", scpName));
-			break;
-		}
-
-		// Unload all
-		case 4: {
-			if (args.HasOptStart("-s")) {
-				ctx.WriteLine("Not implemented");
-			}
-			else {
-				if (args.HasOptStart("-f") || ctx.Confirm("Delete all scripts? (Y/N): ")) svc->UnloadAll();
-				else ctx.WriteLine("Cancelled.");
-			}
-			break;
-		}
-
-		default: throw ReplException("Unknown Command mode: " + args.Mode());
-
-		}
-	}
-
-	// Testing/running
-	CMD_H(ScpSvcRunner) {
-		std::string name = args.GetR<std::string>(0);
-		CCSS_SET_SVC();
-		if (!svc->HasScript(name)) throw ReplUserException(std::format("No loaded script with name '{}'", name));
-		if (args.IsMode(1)) {
-			if (args.HasOptStart("-f")) svc->ExecuteScript(name);
-			else {
-				if (svc->TestScript(name, !args.HasOptStart("-p"))) {
-					ctx.WriteLine("Running...");
-					svc->ExecuteScript(name);
-				}
-				else ctx.WriteLine("Test failed, not running. Use option '-f' to force run if you believe this is a mistake.");
-			}
-		}
-		else svc->TestScript(name, !args.HasOptStart("-p"));
-	}
-
-	CMD_H(ScpSvcPrint) {
-		ctx.WriteLine(CCSS_GET_SVC()->PrintScript(args.GetR<std::string>(0)));
-	}
-
-	CMD_H(Clear) {
-		if (args.Opt("-b")) ctx.Clear();
-		else ctx.Clear(args.GetOr<std::string>(0, "Cleared Screen."));
-	}
-
-	CMD_H(Echo) {
-		std::string r = args.GetRequired<std::string>(0);
-		for (std::size_t i = 0; i < args.GetRequired<std::size_t>(1); i++) {
-			ctx.Write(r);
-		}
-		ctx.WriteLine();
-	}
-
-	CMD_H(Exit) {
-		ctx.CloseApp();
-	}
-
+	
 	BaseCommands::BaseCommands() {
 		Define(
 
@@ -429,7 +25,6 @@ namespace CCRepl {
 			Cmd("Help")
 			.Aliases("h", "?")
 			.Exec(Help)
-			.Test(HelpTest)
 			.Args(StrArg("Search Key", ArgMode::Optional))
 			.Options("-a", "-d", "-e", "-f", "-g", "-i", "-l", "-m", "-o", "-u")
 			.Desc("Lists all commands and descriptions, or shows full help for all commands with Search Key is specified.")
@@ -437,7 +32,8 @@ namespace CCRepl {
 				R"(Lists all commands and descriptions, or full help for all commands starting with Search Key. Behaviour altered with options:
  * '-a' ('aliases'): Prints list of all aliases for that command node (to see full list of all possible combinations, see Help.Alias).
  * '-d' ('description'): Prints full description without truncation.
- * '-e' ('example'): Prints example usages.
+ * '-exam' ('example'): Prints example usages.
+ * '-exac' ('exact'): Prints only exact match with search key.
  * '-f' ('full'): Prints full info regardless of search key presence.
  * '-g' ('group'): Prints by group (by default only done with no search term. Use '-o' to ungroup that)
  * '-i' ('implemented'): Gives [x] if command is marked as implemented, otherwise [ ] to indicate work in progress.
@@ -509,101 +105,11 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 			.Examples("Test({Diary.Add(This is a test entry) -f})")
 			.Group("Base"),
 
-			Cmd("Script")
-			.Aliases("scrpt", "scpt")
+			Cmd("ScriptPath")
+			.Aliases("scrptpth", "scptpth", "sp")
 			.Desc("Commands for running scripts by file path, nodal.")
 			.Group("Base")
 			.Children(
-				
-				// These are for testing w/ script service, can delete this later:
-				Cmd("Service")
-				.Aliases("s", "svc")
-				.Desc("Commands for testing ScriptService, nodal.")
-				.Group("ScriptService")
-				.Children(
-
-					Cmd("ListDir")
-					.Aliases("ld", "lstdir", "ListDirectory", "files", "listfiles")
-					.Exec(ScpSvcList)
-					.Args(StrArg("Source", ArgMode::Optional))
-					.Mode(1)
-					.Desc("Lists all files in the script directory, or relative path to a different directory is specified."),
-
-					Cmd("ListLoaded")
-					.Aliases("ll", "lstl", "lstloaded", "lst", "lstscripts")
-					.Exec(ScpSvcList)
-					.Args(StrArg("Search Key", ArgMode::Optional, ""))
-					.Mode(2)
-					.Desc("Lists all loaded scripts by script service, or all loaded scripts starting with search key if specified."),
-
-					Cmd("Load")
-					.Aliases("l", "ld", "import", "AddScript", "Add", "AddScp", "+")
-					.Exec(ScpSvcData)
-					.Args(StrArg("FilePath", ArgMode::RequiredPrompt))
-					.Options("-a", "-q")
-					.Mode(1)
-					.Desc("Loads and parses a script to script service.")
-					.LongDesc("Loads and parses a script and saves it in script service. By default, will search in the /scripts/ folder for a file with the same name. Can pass the absolute path with option '-a' ('absolute'). When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nBehaviour can be altered by options:\n * '-a' ('absolute'): Takes 'FilePath' to be absolute path instead of relative path.\n * '-q' ('quiet'): Prints less information.")
-					.Examples( "Script.ScriptService.Load(Script1.txt)", "scpt.s.l(C:\\Users\\User\\Desktop\\Script2.txt) -a")
-					.Children(
-
-						Cmd("Dir")
-						.Aliases("d", "a", "all", "*", "directory")
-						.Exec(ScpSvcData)
-						.Args(StrArg("Source", ArgMode::Optional))
-						.Options("-a", "-q")
-						.Mode(2)
-						.Desc("Loads and parses every script in a directory (/scripts/ by default).")
-						.LongDesc("Loads and parses every script in a directory. By default, this is every script in /scripts/. 'Source' argument is a path relative to /scripts/, unless '-a' option is used.\nBehaviour can be altered by options:\n * '-a' ('absolute'): Takes 'Source' to be absolute path instead of relative path.\n * '-q' ('quiet'): Prints less information.")
-
-					),
-
-					Cmd("Unload")
-					.Aliases("u", "rm", "delete", "del", "-")
-					.Exec(ScpSvcData)
-					.Args(StrArg("Script name", ArgMode::RequiredPrompt))
-					.Options("-f", "-q")
-					.Mode(3)
-					.Desc("Unloads a given script in script service. Prompts with y/n confirmation.")
-					.LongDesc("Unloads a given script in script service. Prompts with y/n confirmation. Behaviours can be altered by options:\n * '-f' ('force'): Skips y/n confirmatin.\n * '-q' ('quiet'): Prints less information.")
-					.Children(
-
-						Cmd("All")
-						.Aliases("d", "dir", "a", "all", "*", "directory")
-						.Exec(ScpSvcData)
-						.Options("-f", "-q", "-s")
-						.Mode(4)
-						.Desc("Unloads every script in script service.")
-						.LongDesc("Unloads every script in script service. Prompts with y/n confirmation. Behaviours can be altered by options:\n * '-f' ('force'): Skips y/n confirmation.\n * '-q' ('quiet'): Prints less information.\n * '-s' ('select'): Iterates through each loaded script and prompted to delete.")
-						.Options()
-
-					),
-
-					Cmd("Run")
-					.Aliases("r", "execute", "ex", "testandrun")
-					.Exec(ScpSvcRunner)
-					.Args(StrArg("ScriptName", ArgMode::RequiredPrompt))
-					.Options("-f", "-p")
-					.Mode(1)
-					.Desc("Tests and runs a loaded script.")
-					.LongDesc("Tests and runs a loaded script.Behaviour can be altered by options:\n * '-f' ('force'): Runs the script without testing.\n * '-p' ('print'): Prints more information."),
-
-					Cmd("Test")
-					.Aliases("t", "tst")
-					.Exec(ScpSvcRunner)
-					.Args(StrArg("ScriptName", ArgMode::RequiredPrompt))
-					.Options("-p")
-					.Desc("Tests a loaded script.")
-					.LongDesc("Tests a loaded script. Behaviour can be altered by options:\n * '-p' ('print'): Prints more information."),
-
-					Cmd("Print")
-					.Aliases("p", "pnt", "printinfo", "info")
-					.Exec(ScpSvcPrint)
-					.Args(StrArg("ScriptName", ArgMode::RequiredPrompt))
-					.Desc("Prints info on a loaded script.")
-
-				),
-				// End of script service tests
 
 				Cmd("Run")
 				.Aliases("r", "execute", "ex", "testandrun")
@@ -623,7 +129,6 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 				.Desc("Parses and tests a script by file path.")
 				.LongDesc("Parses and tests a script by file path. When directly passing filepath as an argument instead of at prompt, pass as raw text (without quotes ('\"') or brackets ({})), or repeat every backslash ('\\'->'\\\\'), otherwise the parser will ignore them.\nAt prompt, you can cancel the operation by leaving it blank, or typing one of the following: { '\\', '_', 'cancel' }.\nBehaviour can be altered by options:\n * '-p' ('print'): Prints more information when parsing.")
 				.Examples("Script.Test()", "Script.Test(C:\\Users\\User\\Desktop\\Script.txt)")
-				.Group("Test")
 
 			),
 
@@ -656,5 +161,306 @@ Checks for options with 'startswith'. Only the first valid options is used (exce
 
 		);
 	}
+
+	CMD_H(About) {
+		ctx.WriteLine(ctx.AboutStr);
+	}
+
+	CMD_H(Help) {
+
+		// Create filtered map (shows all if string is empty):
+		std::optional<std::string> inputKey = args.Get<std::string>(0);
+		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
+		std::string sk = str::ToLower(ik);								// Lower case, for searching.
+		bool exact = args.HasOptStart("-exac");
+		auto filtered = ctx.CommandReg | std::views::filter(
+			[&sk, &exact](const auto& it) { return exact ? str::Equals(it.first, sk, false) : it.first.starts_with(sk); }
+		);
+
+		std::size_t count = std::ranges::distance(filtered);
+		if (count == 0) {
+			ctx.WriteLine(std::format("No commands found {} '{}'. Try 'Help.Alias' for possible aliases.", exact ? "with name" : "starting with", ik));
+			return;
+		}
+
+
+		// Determine mode:
+		std::optional<bool> oneline;
+		bool olDefault;
+		int olOpt = args.FirstOptionStart("-o", "-m");
+		switch (olOpt) {
+		case 0: oneline = true;				break;
+		case 1: oneline = false;			break;
+		default: oneline = std::nullopt;	break;
+		}
+
+		HelpAttribute att;
+		int attMode = args.FirstOptionStart("-a", "-d", "-exam", "-f", "-i", "-l", "-u");
+		switch (attMode) {
+		case 0:		att = HelpAttribute::Aliases;			 olDefault = true;	break;
+		case 1:		att = HelpAttribute::Description;		 olDefault = true;	break;
+		case 2:		att = HelpAttribute::Examples;			 olDefault = false;	break;
+		case 3:		att = HelpAttribute::Full;				 olDefault = false;	break;
+		case 4:		att = HelpAttribute::Implemented;		 olDefault = true;	break;
+		case 5:		att = HelpAttribute::LongDescription;	 olDefault = false;	break;
+		case 6:		att = HelpAttribute::Usage;				 olDefault = true;	break;
+		default:	
+			//att = args.HasOptStart("-o") ? HelpAttribute::Description : inputKey.has_value() ? HelpAttribute::Full : HelpAttribute::Description;
+			if (args.HasOptStart("-o")) att = HelpAttribute::Description;
+			else if (exact) att = HelpAttribute::Full;
+			else if (inputKey.has_value()) att = HelpAttribute::Full;
+			else att = HelpAttribute::Description;
+
+			olDefault = true; 
+			break;
+		}
+
+		bool group = args.HasOptStart("-g");
+
+		// Define col here w/ max:
+		std::size_t col = 0;
+		for (const auto& it : filtered) if (it.first.size() > col) col = it.first.size();
+		col += 5;
+		std::size_t max = ctx.MaxWidth.value_or(180);
+		std::ostringstream oss;
+
+		// Write it out:
+		if (group) {
+			std::set<std::string> seen;
+			std::vector<std::string> groups;
+			for (const auto& it : filtered) {
+				std::string group = it.second.Group;
+				if (seen.insert(group).second) groups.push_back(group);
+			}
+
+			// Sort groups:
+			std::sort(groups.begin(), groups.end(),
+				[](const auto& a, const auto& b) {
+					auto rank = [](const auto& s) {
+						if (s == "Base") return 0;
+						if (s == "Ungrouped") return 2;
+						return 1;
+						};
+					int ra = rank(a);
+					int rb = rank(b);
+					if (ra != rb) return ra < rb;
+					return a < b;
+				});
+
+			for (std::string g : groups) {
+				auto gfiltered = ctx.CommandReg | std::views::filter(
+					[&sk, &g](const auto& it) { return it.first.starts_with(sk) && it.second.Group == g;}
+				);
+
+				// Print banner:
+				oss << "\n * " << g << " (" << std::ranges::distance(gfiltered) << " total):\n";
+
+				// Print each line:
+				for (const auto& it : gfiltered)
+					oss << it.second.PrintIndexLine(att, col, max, oneline.value_or(olDefault)) << '\n';
+			}
+		}
+		else {
+			for (const auto& it : filtered) 
+				oss << it.second.PrintIndexLine(att, col, max, oneline.value_or(olDefault)) << '\n';
+		}
+		
+
+		// Print announcement:
+		std::string beginStmt = inputKey.has_value() ? std::format(" beginning with '{}'", ik) : "";
+		if (!exact) {
+			if (att == HelpAttribute::Full) ctx.WriteLine(std::format("Printing full information for all commands{} ({} total):\n", beginStmt, count));
+			else ctx.WriteLine(std::format("Printing addresses and {} for all commands{} ({} total):\n", ToString(att), beginStmt, count));
+		}
+
+		ctx.WriteLine(oss.str());
+		// Test when you get back.
+	}	
+
+	CMD_H(HelpAlias) {
+
+		// Create filtered map (shows all if string is empty):
+		std::optional<std::string> inputKey = args.Get<std::string>(0);
+		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
+		std::string sk = str::ToLower(ik);								// Lower case, for searching.
+		auto filtered = ctx.AliasReg | std::views::filter(
+			[&sk](const auto& it) { return it.first.starts_with(sk); }
+		);
+
+		// Print announcement:
+		std::size_t count = std::ranges::distance(filtered);
+		if (count == 0) {
+			ctx.WriteLine(std::format("No commands or aliases found starting with '{}'.", ik));
+			return;
+		}
+		
+		// Define col.
+		std::size_t col = 0;
+		for (const auto& it : filtered) if (it.first.size() > col) col = it.first.size();
+		col += 5;
+		std::size_t max = ctx.MaxWidth.value_or(180);
+		if (col > max / 2) col = max / 2;
+
+		std::ostringstream oss;
+
+		if (args.HasOptStart("-g")) {
+			std::set<std::string> seen;
+			std::vector<std::string> groups;
+			for (const auto& it : filtered) {
+				std::string group = it.second->Group;
+				if (seen.insert(group).second) groups.push_back(group);
+			}
+
+			// Sort groups:
+			std::sort(groups.begin(), groups.end(),
+				[](const auto& a, const auto& b) {
+					auto rank = [](const auto& s) {
+						if (s == "Base") return 0;
+						if (s == "Ungrouped") return 2;
+						return 1;
+						};
+					int ra = rank(a);
+					int rb = rank(b);
+					if (ra != rb) return ra < rb;
+					return a < b;
+				});
+
+			// Add each to string:
+			for (std::string g : groups) {
+				// Filter for group:
+				auto gfiltered = ctx.AliasReg | std::views::filter(
+					[&sk, &g](const auto& it) { return it.first.starts_with(sk) && it.second->Group == g;}
+				);
+
+				// Count:
+				std::size_t gcount = 0;
+				std::set<std::string> seenCmd;
+				for (const auto& it : gfiltered) {
+					std::string add = it.second->Address;
+					if (seenCmd.insert(add).second) gcount++;
+				}
+
+				// Print banner:
+				oss << "\n * " << g << " (" << std::ranges::distance(gfiltered) << " total aliases for " << gcount << " commands) :\n";
+
+				// Print each line:
+				for (const auto& it : gfiltered)
+					oss << str::ToIndexLine(it.first, it.second->Address, col, max, true) << '\n';
+
+			}
+		}
+		else for (const auto& it : filtered)
+			oss << str::ToIndexLine(it.first, it.second->Address, col, max, true) << '\n';
+		
+		// Print banner:
+		if (inputKey) ctx.WriteLine(std::format("Printing all command names and aliases starting with '{}' ({} total):\n", ik, count));
+		else ctx.WriteLine(std::format("Print all command names and aliases ({} total):\n", count));
+		
+		// Print:
+		ctx.WriteLine(oss.str());
+
+		// Count unique commands:
+		std::size_t uniqueCmd = 0;
+		std::set<std::string> seenCmd;
+		for (const auto& it : filtered) {
+			std::string add = it.second->Address;
+			if (seenCmd.insert(add).second) uniqueCmd++;
+		}
+
+		// End box:
+		ctx.WriteLine();
+		std::ostringstream report;
+		report << count << " total aliases ";
+		if (inputKey.has_value()) report << "starting with '" << ik << "' found ";
+		report << "for " << uniqueCmd << " commands.";
+		ctx.WriteLine(fmt::TxtBoxCenter(report.str(), inputKey.has_value() ? ik : "All"));
+	}
+
+	CMD_H(HelpTree) {
+		std::optional<std::string> inputCmd = args.Get<std::string>(0);
+		HelpAttribute att;
+		int attMode = args.FirstOptionStart("-a", "-d", "-e", "-i", "-l", "-u");
+		switch (attMode) {
+		case 0: att = HelpAttribute::Aliases;			break;
+		case 1: att = HelpAttribute::Description;		break;
+		case 2: att = HelpAttribute::Examples;			break;
+		case 3: att = HelpAttribute::Implemented;		break;
+		case 4: att = HelpAttribute::LongDescription;	break;
+		case 5: att = HelpAttribute::Usage;				break;
+		default: att = HelpAttribute::None;				break;
+		}
+
+		if (!inputCmd) ctx.WriteLine(ctx.RootTree(att));
+		else {
+			ReplCommand* cmd = ctx.FindCommand(str::DotSeparated(*inputCmd));
+			std::size_t col = str::MaxLength(cmd->PrintTree("", "")) + 5;
+			ctx.WriteLine(cmd->PrintTree("", "", att, col, ctx.MaxWidth.value_or(180)));
+		}
+	}
+
+	CMD_H(CommandList) {
+		std::optional<std::string> inputKey = args.Get<std::string>(0);
+		std::string ik = str::DotSeparated(inputKey.value_or(""));		// For display.
+		std::string sk = str::ToLower(ik);								// Lower case, for searching.
+		auto filtered = ctx.CommandReg | std::views::filter(
+			[&sk](const auto& it) { return it.first.starts_with(sk); }
+		);
+		std::size_t count = std::ranges::distance(filtered);
+		if (count == 0) {
+			ctx.WriteLine(std::format("No commands found starting with '{}'. Try 'Help.Alias' for possible aliases.", ik));
+			return;
+		}
+		if (inputKey) ctx.WriteLine(std::format("Printing all commands beginning with '{}' ({} total):\n", ik, count));
+		else ctx.WriteLine(std::format("Printing all commands ({} total):\n", count));
+
+		std::ostringstream oss;
+		for (const auto& it : filtered) oss << it.first << '\n';
+		ctx.WriteLine(oss.str());
+	}
+
+	CMD_H(TestInput) {
+		std::string input = args.GetRequired<std::string>(0);
+		ctx.Test(input, args.HasOptStart("-r"));
+	}
+
+	CMD_H(ScriptHandler) {
+		// just occured to me that "mode" should be in commandargs instead of ctx, will change that.
+		bool PrintAll = args.HasOptStart("-p");
+
+		std::string path = args.GetRequired<std::string>(0);
+		std::string scriptTxt = CTX_WAIT_SPIN(std::string, str::ReadTextFile(path), std::format("Loading file '{}'", path), "Loaded.");
+		if (PrintAll) ctx.WriteLine(scriptTxt + "\n\n");
+		Script scp = CTX_WAIT_SPIN(Script, TextToScript(ctx, scriptTxt), "Generating Script", "Generated.");
+
+		if (args.IsMode(1)) {
+			if (args.HasOptStart("-f")) scp.Execute(ctx);
+			else {
+				if (scp.Test(ctx, !PrintAll)) {
+					ctx.WriteLine("Running...");
+					scp.Execute(ctx);
+				}
+				else ctx.WriteLine("Test failed, not running. Use option '-f' to force run if you believe this is a mistake.");
+			}
+		}
+		else scp.Test(ctx, !PrintAll);
+	}	
+
+	CMD_H(Clear) {
+		if (args.Opt("-b")) ctx.Clear();
+		else ctx.Clear(args.GetOr<std::string>(0, "Cleared Screen."));
+	}
+
+	CMD_H(Echo) {
+		std::string r = args.GetRequired<std::string>(0);
+		for (std::size_t i = 0; i < args.GetRequired<std::size_t>(1); i++) {
+			ctx.Write(r);
+		}
+		ctx.WriteLine();
+	}
+
+	CMD_H(Exit) {
+		ctx.CloseApp();
+	}
+
 
 }

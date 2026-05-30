@@ -228,13 +228,13 @@ namespace str {
 		return oss.str();
 	}
 
-	std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t total, bool oneline) {
-		if (col >= total) throw std::runtime_error("str::ToIndex(): col exceeds total.");
+	std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t max, bool oneline) {
+		if (col >= max) throw std::runtime_error("str::ToIndex(): col exceeds total.");
 		std::ostringstream oss;
 
-		if (oneline) return TruncatePadRight(key, col) + Truncate(value, total - col);
+		if (oneline) return TruncatePadRight(key, col) + Truncate(value, max - col);
 		else {
-			std::vector<std::string> lv = ToIndexLineV(key, value, col, total, false);
+			std::vector<std::string> lv = ToIndexLineV(key, value, col, max, false);
 			for (std::size_t i = 0; i < lv.size(); i++) {
 				oss << lv[i];
 				if (i + 1 != lv.size()) oss << '\n';
@@ -309,7 +309,7 @@ namespace str {
 
 	bool InVector(const char c, const std::vector<char>& vec, bool caseSensitive) {
 		if (caseSensitive) return std::any_of(vec.begin(), vec.end(), [&](const char& vc) { return vc == c; });
-		else return std::any_of(vec.begin(), vec.end(), [&](const char& vc) { return std::tolower(vc) == std::tolower(vc); });
+		else return std::any_of(vec.begin(), vec.end(), [&](const char& vc) { return std::tolower(vc) == std::tolower(c); });
 	}
 
 	std::vector<std::string> SplitBy(const std::string& text, char c) {

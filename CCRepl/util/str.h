@@ -92,8 +92,8 @@ namespace str {
     std::string PresentList(const std::vector<std::string>& vec, std::string title = "", std::string sep = ", ", std::string start = "[ ", std::string end = " ]");
     // Converts every instance of "\n" in a string to a new line.
     std::string ToMultiLine(const std::string& text);
-    // Prints an index line: key to left, truncated by col, value written from col, wraps or truncates at total unless oneline is true.
-    std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t total, bool oneline = true);
+    // Prints an index line: key to left, truncated by col, value written from col, wraps or truncates at max unless oneline is true.
+    std::string ToIndexLine(const std::string& key, const std::string& value, std::size_t col, std::size_t max, bool oneline = true);
     // Returns [x] if true, [ ] if false.
     std::string ToCheckBox(const bool v);
     // Returns percentage of numerator and denominator as a percentage, e.g. 0.5, 2 -> "25%".
@@ -126,7 +126,7 @@ namespace str {
     std::vector<std::string> IndentStr(const std::string& text, size_t n = 1);
     // Wrap text into a certain width. Pad adds white space to the end so that every line is the same width.
     std::vector<std::string> Wrap(const std::string& text, std::size_t w, bool pad = false);
-    // Prints an index line: key to left, truncated by col, value written from col, wraps or truncates at total unless oneline is true. Returned as a vector.
+    // Prints an index line: key to left, truncated by col, value written from col, wraps or truncates at max unless oneline is true. Returned as a vector.
     std::vector<std::string> ToIndexLineV(const std::string& index, const std::string& value, std::size_t col, std::size_t total, bool oneline = true);
 
     // Prints a double as a string with prec decimal places. Compact truncates like 1,234,567 -> 1.2M

@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BaseCommands.h" />
     <ClInclude Include="CommandArgs.h" />
     <ClInclude Include="CommandBuilder.h" />
     <ClInclude Include="CommandSet.h" />
@@ -152,6 +153,7 @@
     <ClInclude Include="ReplCommand.h" />
     <ClInclude Include="ReplContext.h" />
     <ClInclude Include="ReplException.h" />
+    <ClInclude Include="ScptCommands.h" />
     <ClInclude Include="Script.h" />
     <ClInclude Include="ScriptService.h" />
     <ClInclude Include="Tokenizers.h" />
@@ -170,6 +172,7 @@
     </ClCompile>
     <ClCompile Include="ReplCommand.cpp" />
     <ClCompile Include="ReplContext.cpp" />
+    <ClCompile Include="ScptCommands.cpp" />
     <ClCompile Include="Script.cpp" />
     <ClCompile Include="ScriptService.cpp" />
     <ClCompile Include="TestCommands.cpp" />

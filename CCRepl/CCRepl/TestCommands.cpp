@@ -8,7 +8,7 @@ namespace CCRepl {
 
 	CMD_H(Handler) {
 		ctx.WriteLine("Nodal command (No handler, or execute function not yet implemented).\n");
-		ctx.WriteLine(args.Cmd->PrintFull());
+		ctx.WriteLine(args.Cmd->PrintFull(ctx.MaxWidth.value_or(150)));
 
 		if (args.Cmd->Children.size() > 0) {			
 			ctx.WriteLine("\nTree:\n");

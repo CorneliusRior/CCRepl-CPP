@@ -1,6 +1,6 @@
 #pragma once
-
 #include "CommandArgs.h"
+#include "fmt.h"
 
 #define CMD_H(name) static void name(CCRepl::ReplContext& ctx, CCRepl::CommandArgs& args)
 #define CMD_T(name) static bool name(CCRepl::ReplContext& ctx, CCRepl::CommandArgs& args)
@@ -58,7 +58,7 @@ namespace CCRepl {
 
 		// Output/Print:
 		std::string PrintRef() const;
-		std::string PrintFull() const;
+		std::string PrintFull(std::size_t max) const;
 		std::string PrintIndexLine(HelpAttribute help, std::size_t col, std::size_t total, bool oneline = true) const;
 		std::vector<std::string> GetChildAddresses() const;
 		std::string PrintTree(std::string namePrefix, std::string listPrefix, HelpAttribute help = HelpAttribute::None, std::size_t col =  50, std::size_t total = 180);

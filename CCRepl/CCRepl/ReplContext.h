@@ -20,6 +20,7 @@ namespace CCRepl {
 	public:
 
 		bool running = true;
+		std::optional<std::size_t> MaxWidth;
 		std::string AboutStr = "No 'About' statement.";
 		std::map<std::string, ReplCommand> CommandReg;
 		std::map<std::string, ReplCommand*> AliasReg;

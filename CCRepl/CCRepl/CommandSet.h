@@ -21,12 +21,7 @@ namespace CCRepl {
 		virtual ~CommandSet() = default;
 		virtual std::vector<ReplCommand> GetCommands() { return std::move(commands_); }
 	};
-
-	class BaseCommands : public CommandSet {
-	public:
-		BaseCommands();
-	};
-
+	
 	class TestCommands : public CommandSet {
 	public:
 		TestCommands();

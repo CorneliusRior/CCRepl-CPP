@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <ranges>
+
 #include "Script.h"
 #include "ReplContext.h"
 
@@ -44,8 +45,10 @@ namespace CCRepl {
 		std::string ListDir(const std::filesystem::path& dir) const;
 
 		bool HasScript(const std::string& name) const;		
+		bool RenameScript(const std::string& oldName, const std::string& newName);
 		std::string ListScripts(const std::string& sk) const;
 		std::string PrintScript(const std::string& name) const;
+		std::vector<std::string> ScriptNames() const;
 		Script& GetScript(const std::string& name);
 		const Script& GetScript(const std::string& name) const;
 		bool TestScript(const std::string& name, bool silent = false);

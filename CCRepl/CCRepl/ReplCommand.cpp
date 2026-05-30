@@ -26,24 +26,24 @@ namespace CCRepl {
 		return std::format("{} ({} {})", Address, Children.size(), Children.size() == 1 ? "child" : "children");
 	}
 
-	std::string ReplCommand::PrintIndexLine(HelpAttribute help, std::size_t col, std::size_t total, bool oneline) const {
+	std::string ReplCommand::PrintIndexLine(HelpAttribute help, std::size_t col, std::size_t max, bool oneline) const {
 		switch (help) {
 		case HelpAttribute::None:
 			return Address;
 		case HelpAttribute::Aliases:
-			return str::ToIndexLine(Address, (Aliases.size() == 0 ? "-" : str::PresentList(Aliases)), col, total, oneline);
+			return str::ToIndexLine(Address, (Aliases.size() == 0 ? "-" : str::PresentList(Aliases)), col, max, oneline);
 		case HelpAttribute::Description:
-			return str::ToIndexLine(Address, Desc.value_or("-"), col, total, oneline);
+			return str::ToIndexLine(Address, Desc.value_or("-"), col, max, oneline);
 		case HelpAttribute::Examples:
-			return str::ToIndexLine(Address, (Examples.size() == 0 ? "-" : str::PresentList(Examples, "", "\n", "", "")), col, total, oneline);
+			return str::ToIndexLine(Address, (Examples.size() == 0 ? "-" : str::PresentList(Examples, "", "\n", "", "")), col, max, oneline);
 		case HelpAttribute::Full:
-			return PrintFull();
+			return PrintFull(max) + "\n";
 		case HelpAttribute::Implemented:
-			return str::ToIndexLine(Address, Implemented ? "[x]" : "[ ]", col, total, oneline);
+			return str::ToIndexLine(Address, Implemented ? "[x]" : "[ ]", col, max, oneline);
 		case HelpAttribute::LongDescription:
-			return str::ToIndexLine(Address, LongDesc.value_or("-"), col, total, oneline);
+			return str::ToIndexLine(Address, LongDesc.value_or("-"), col, max, oneline);
 		case HelpAttribute::Usage:
-			return str::ToIndexLine(Address, Usage.value_or("-"), col, total, oneline);
+			return str::ToIndexLine(Address, Usage.value_or("-"), col, max, oneline);
 		default:
 			return "ERROR: Unknown HelpAttribute.";
 		}
@@ -55,9 +55,14 @@ namespace CCRepl {
 		return r;
 	}
 
-	std::string ReplCommand::PrintFull() const {
+	std::string ReplCommand::PrintFull(std::size_t boxw) const {
+		std::size_t col = 15;
+		std::size_t boxhpad = 3;
+		std::size_t max = boxw - col - (boxhpad * 2);
+
 		std::ostringstream oss;
-		oss << '*' << Address
+
+		/*oss << '*' << Address
 			<< " (" << Group << ")"
 			<< (Implemented ? "" : " [WIP]");
 		oss << "\nParent: "
@@ -72,8 +77,25 @@ namespace CCRepl {
 			if (Children.size() == 1) oss << "1 child: [ " << Children[0]->Address << " ]";
 			else oss << Children.size() << str::PresentList(GetChildAddresses(), " children: ");
 			oss << '\n';
-		}
-		return oss.str();
+		}*//*
+		oss << "\n * [" << Address << "] (" << Group << ")"
+			<< (Implemented ? "" : " [WIP]")
+			<< ":  *\n\n";*/
+
+		oss << str::ToIndexLine("Address:", Address, col, max, true) << (Implemented ? "" : " [WIP]") << '\n'
+			<< str::ToIndexLine("Group:", Group, col, max, true) << '\n'
+			<< str::ToIndexLine("Parent:", Parent ? Parent->Address : "Root", col, max, true) << '\n'
+			<< str::ToIndexLine("Aliases:", Aliases.empty() ? "(none)" : str::PresentList(Aliases), col, max) << '\n'
+			<< str::ToIndexLine("Usage:", *Usage, col, max, true)
+			<< "\n\n"
+			<< str::ToIndexLine("Description:", Desc.value_or("(none)"), col, max, false);
+		if (!Examples.empty()) oss << "\n\n" << str::ToIndexLine("Examples:", str::PresentList(Examples, "", "\n", "", ""), col, max, false);
+		if (LongDesc) oss << "\n\n" << *LongDesc;
+		if (Children.size() > 0) oss << "\n\n" << str::ToIndexLine("Children:", str::PresentList(GetChildAddresses(), "", "\n", "", ""), col, max, false);
+
+		fmt::TextBox full(oss.str(), Address, fmt::TextAlign::Left, fmt::TextAlign::Left, 1, boxhpad);
+		return full.PrintStr(boxw);
+		//return oss.str();
 	}
 
 	std::string ReplCommand::PrintTree(std::string namePrefix, std::string listPrefix, HelpAttribute help, std::size_t col, std::size_t total) {

@@ -167,7 +167,7 @@ namespace CCRepl {
 		Putting "@" in InterStmt will do keyword. Continue until the next ' ', that has to match a keyword.
 		To Start off, we'll just have "Repeat", case insensitive.
 		*/
-
+		
 		std::vector<ScriptToken> r;
 		std::size_t scriptLength = text.size();
 		if (scriptLength == 0) return r;
@@ -293,7 +293,7 @@ namespace CCRepl {
 
 		for (std::size_t i = 0; i < scriptLength; i++) {
 			char c = text[i];
-			DB(c);
+			
 			switch (st) {
 
 			case State::InterStmt: {
@@ -329,22 +329,13 @@ namespace CCRepl {
 				std::string keyword = str::ToUpper(StringUntil(text, i, ' ', false));
 
 				// If this expands to more than like 3 or 4 keywords, make this a whole switch thing:
-				if (keyword == "REPEAT") {
-					// Deal with it here. Do it as its own loop? Lambda? External function? lambda for now.
-					KeywordRepeat(i);
-				}
+				if (keyword == "REPEAT") KeywordRepeat(i);
 				else SCRIPT_ERROR("Unknown keyword: " + keyword);
-
 				continue;
 			}
 
 			}			
 		}
-
-		// Ensure no ending errors:
-		//std::size_t i = scriptLength - 1;
-
-		// No adding in things at the last minute, just put ';' at the end.
 		return r;
 	}
 
@@ -406,7 +397,7 @@ namespace CCRepl {
 
 		for (; i < text.size(); i++) {
 			char c = text[i];
-
+			
 			switch (st) {
 
 			case State::Inter: {
@@ -531,6 +522,7 @@ namespace CCRepl {
 		// Starting on the first non-whitespace one.
 		for (; i < text.size(); i++) {
 			char c = text[i];
+			
 			switch (st) {
 
 			case State::Cmd: {

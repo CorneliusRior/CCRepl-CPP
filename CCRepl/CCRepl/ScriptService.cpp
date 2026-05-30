@@ -95,6 +95,17 @@ namespace CCRepl {
 		return scripts_.find(name) != scripts_.end();
 	}
 	
+	bool ScriptService::RenameScript(const std::string& oldName, const std::string& newName) {
+		if (!HasScript(oldName)) throw ReplUserException(std::format("No loaded script with name '{}'", oldName));
+		if (HasScript(newName)) throw ReplUserException(std::format("Cannot rename script to '{}': already exists.", newName));
+		auto node = scripts_.extract(oldName);
+		node.key() = newName;
+		scripts_.insert(std::move(node));
+		Script* n = &GetScript(newName);
+		n->MetaData.Name = newName;
+		return true;
+	}
+
 	std::string ScriptService::ListScripts(const std::string& sk) const {
 		auto filtered = scripts_ | std::views::filter(
 			[&sk](const auto& it) { return str::StartsWith(it.first, sk); }
@@ -108,6 +119,13 @@ namespace CCRepl {
 		return GetScript(name).Print();
 	}
 	
+	std::vector<std::string> ScriptService::ScriptNames() const {
+		std::vector<std::string> r; 
+		r.reserve(scripts_.size());
+		for (const auto& [k, v] : scripts_) r.push_back(k);
+		return r;
+	}
+
 	Script& ScriptService::GetScript(const std::string& name) {
 		auto it = scripts_.find(name);
 		if (it == scripts_.end()) throw std::runtime_error("No loaded data for script: " + name);
