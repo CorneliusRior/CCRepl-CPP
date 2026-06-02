@@ -444,18 +444,32 @@ namespace str {
 	}
 
 	std::string ToString(double value, std::size_t prec, bool compact) {
+
+		auto format = [prec](double x, char suffix = '\0') {
+			const double scale = std::pow(10, static_cast<double>(prec));
+			if (x >= 0) x = std::floor(x * scale) / scale;
+			else x = std::ceil(x * scale) / scale;
+
+			std::ostringstream oss;
+			oss << std::fixed << std::setprecision(prec) << x;
+			std::string s = oss.str();
+			if (auto dot = s.find('.'); dot != std::string::npos) {
+				s.erase(s.find_last_not_of('0') + 1);
+				if (!s.empty() && s.back() == '.') s.pop_back();
+			}
+
+			if (suffix) s.push_back(suffix);
+			return s;
+		};
+
 		if (compact) {
 			const double abs_val = std::abs(value);
-			const char* sign = value < 0 ? "-" : "";
-
-			auto compress = [&abs_val, &sign, &prec](double q, char u) {
-				return std::format("{}{:.{}f}{}", sign, abs_val / q, prec, u);
-				};
-			if (abs_val >= 1e15) return compress(1e15, 'Q');
-			if (abs_val >= 1e12) return compress(1e12, 'T');
-			if (abs_val >= 1e9) return compress(1e9, 'B');
-			if (abs_val >= 1e6) return compress(1e6, 'M');
-			if (abs_val >= 1e3) return compress(1e3, 'K');
+			if (abs_val >= 1e15)	return format( value / 1e15, 'Q');
+			if (abs_val >= 1e12)	return format( value / 1e12, 'T');
+			if (abs_val >= 1e9)		return format( value / 1e9, 'B');
+			if (abs_val >= 1e6)		return format( value / 1e6, 'M');
+			if (abs_val >= 1e3)		return format( value / 1e3, 'K');
+			return format(value);
 		}
 		std::ostringstream oss;
 		oss << std::fixed << std::setprecision(prec) << value;

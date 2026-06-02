@@ -180,6 +180,26 @@ namespace CCRepl {
 		ctx.WriteLine(argC ? str::ToString(*argC) : "Undefined");
 	}
 
+	CMD_H(DoubleToString) {
+		double value = args.GetR<double>(0);
+		std::size_t prec = args.GetR<std::size_t>(1);
+		bool compact = args.GetR<bool>(2);
+		std::string expected = args.GetR<std::string>(3);
+
+		std::string actual = str::ToString(value, prec, compact);
+
+		if (expected == actual)
+			ctx.WriteLine("[x] Exp.: " + str::TruncatePadRight(expected, 10) + " == Act.: " + actual);
+		else {
+			ctx.WriteLine("[ ] Exp.: " + str::TruncatePadRight(expected, 10) + " != Act.: " + actual);
+		}
+			
+	}
+
+	CMD_H(VariadicPrintLine) {
+		ctx.WriteLineV("This is a thing", "And this is also a thing", "so many things!", 29, 24, "hello", 87.5 / 12);
+	}
+
 	TestCommands::TestCommands() {
 		Define(
 
@@ -221,7 +241,31 @@ namespace CCRepl {
 					IntArg("argB", ArgMode::Optional),
 					IntArg("argC", ArgMode::Optional)
 				)
-				.Group("Test")				
+				.Group("Test"),
+
+				Cmd("DoubleToString")
+				.Aliases("dts")
+				.Exec(DoubleToString)
+				.Args(
+					DblArg("Amount", ArgMode::Required),
+					SztArg("Prec", ArgMode::Required),
+					CmdArg<bool>(
+						"Compact", 
+						[](const std::string& text, bool& v){ 
+							if (text == "true" || text == "false") {
+								v = text == "true" ? true : false;
+								return true;
+							}
+							return false;
+						}
+					),
+					StrArg("Expected")
+				)
+				.Desc("We really didn't bake a bool arg huh?"),
+
+				Cmd("VariadicWriteLine")
+				.Aliases("vwl")
+				.Exec(VariadicPrintLine)
 
 			)
 

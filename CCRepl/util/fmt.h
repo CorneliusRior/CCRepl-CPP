@@ -14,7 +14,6 @@ namespace fmt
 		Right
 	};
 
-
 	TextAlign ParseTextAlign(const std::string& text);
 	bool TryParseTextAlign(const std::string& text, TextAlign& v);
 	std::string ToString(const TextAlign& value);

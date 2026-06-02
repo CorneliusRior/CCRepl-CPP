@@ -64,6 +64,19 @@ namespace CCRepl {
 		void WriteLine(double value) const;
 		void Write(double value) const;
 
+		template<typename... Txt>
+		void WriteLineV(Txt&&... text) const {			
+			std::ostringstream oss;
+			auto WriteOne = [&](auto&& item) {
+				if (oss.tellp() > 0) oss << ", ";
+				oss << std::forward<decltype(item)>(item);
+			};
+			(WriteOne(std::forward<Txt>(text)), ...);
+
+			if (ReqWriteLine) ReqWriteLine(oss.str());
+			else throw ReplException("ReqWriteLine not set.");
+		}
+
 		/*
 		Service Storage.
 
