@@ -41,8 +41,8 @@ namespace CCRepl {
 		bool Test(const std::string& input, bool run = false);
 		void CloseApp();
 		void Clear(const std::string& text = "") const;
-		void WriteLine(const std::string& text = "") const;
-		void Write(const std::string& text = "") const;
+		//void WriteLine(const std::string& text = "") const;
+		//void Write(const std::string& text = "") const;
 		std::string ReadLine(const std::string& prompt = "");
 		std::function<void(const std::string&)> ReqClear;
 		std::function<void(const std::string&)> ReqWriteLine;
@@ -65,7 +65,7 @@ namespace CCRepl {
 		void Write(double value) const;
 
 		template<typename... Txt>
-		void WriteLineV(Txt&&... text) const {			
+		void WriteLine(Txt&&... text) const {			
 			std::ostringstream oss;
 			auto WriteOne = [&](auto&& item) {
 				if (oss.tellp() > 0) oss << ", ";
@@ -74,6 +74,19 @@ namespace CCRepl {
 			(WriteOne(std::forward<Txt>(text)), ...);
 
 			if (ReqWriteLine) ReqWriteLine(oss.str());
+			else throw ReplException("ReqWriteLine not set.");
+		}
+
+		template<typename... Txt>
+		void Write(Txt&&... text) const {
+			std::ostringstream oss;
+			auto WriteOne = [&](auto&& item) {
+				if (oss.tellp() > 0) oss << ", ";
+				oss << std::forward<decltype(item)>(item);
+				};
+			(WriteOne(std::forward<Txt>(text)), ...);
+
+			if (ReqWriteLine) ReqWrite(oss.str());
 			else throw ReplException("ReqWriteLine not set.");
 		}
 

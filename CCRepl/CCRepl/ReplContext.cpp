@@ -96,7 +96,7 @@ namespace CCRepl {
 		else WriteLine("Attempted to clear, but ReqClear not set.");
 	}
 
-	void ReplContext::WriteLine(const std::string& text) const {
+	/*void ReplContext::WriteLine(const std::string& text) const {
 		if (ReqWriteLine) ReqWriteLine(text);
 		else throw ReplException("ReqWriteLine not set.");
 	}
@@ -104,7 +104,7 @@ namespace CCRepl {
 	void ReplContext::Write(const std::string& text) const {
 		if (ReqWrite) ReqWrite(text);
 		else throw ReplException("ReqWrite not set.");
-	}
+	}*/
 	
 	std::string ReplContext::ReadLine(const std::string& prompt) {
 		if (ReqReadLine) return ReqReadLine(prompt);

@@ -197,7 +197,10 @@ namespace CCRepl {
 	}
 
 	CMD_H(VariadicPrintLine) {
-		ctx.WriteLineV("This is a thing", "And this is also a thing", "so many things!", 29, 24, "hello", 87.5 / 12);
+		ctx.WriteLine("This is a thing", "And this is also a thing", "so many things!", 29, 24, "hello", 87.5 / 12);
+		ctx.WriteLine("This is a new line I think.");
+		ctx.WriteLine();
+		ctx.WriteLine("yoo");
 	}
 
 	TestCommands::TestCommands() {
