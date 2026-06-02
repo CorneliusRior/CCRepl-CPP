@@ -318,13 +318,13 @@ namespace fmt
 				oss << Columns[i].HLine;
 				if (i != Columns.size() - 1) oss << "┬";
 			}
-			oss << "┐" << std::endl;
+			oss << "┐" << '\n';
 
 			// Draw Banner, headers:
 			for (TextTableColumn c : Columns) {
 				oss << "│" << AlignText(c.Header, c.HeaderAlignment, c.Width);
 			}
-			oss << "│" << std::endl;
+			oss << "│" << '\n';
 
 			// Draw each row (item):
 			for (std::vector<std::string> item : Items) {
@@ -334,13 +334,13 @@ namespace fmt
 					oss << Columns[i].HLine;
 					if (i != Columns.size() - 1) oss << "┼";
 				}
-				oss << "┤" << std::endl;
+				oss << "┤" << '\n';
 
 				// Draw data:
 				for (int i = 0; i < Columns.size(); i++) {
 					oss << "│" << AlignText(item[i], Columns[i].DataAlignment, Columns[i].Width);
 				}
-				oss << "│" << std::endl;
+				oss << "│" << '\n';
 			}
 
 			// Draw bottom:
@@ -350,6 +350,96 @@ namespace fmt
 				if (i != Columns.size() - 1) oss << "┴";
 			}
 			oss << "┘";
+		}
+
+		return oss.str();
+	}
+
+	std::string TextTable::PrintML(bool ascii) const {
+		// Ensure data lines up:
+		Validate();
+
+		std::ostringstream oss;
+
+		auto DrawRow = [&](const std::vector<std::string>& row) {
+			std::vector<std::vector<std::string>> wrappedRow;
+			wrappedRow.reserve(row.size());
+			std::size_t h = 1;
+			for (std::size_t i = 0; i < Columns.size(); i++) {
+				wrappedRow.push_back(str::Wrap(row[i], Columns[i].Width));
+				if (wrappedRow[i].size() > h) h = wrappedRow[i].size();
+			}
+
+			for (std::size_t l = 0; l < h; l++) {
+				oss << (ascii ? "|" : "│");
+				for (std::size_t c = 0; c < Columns.size(); c++) {
+					std::string cell = l < wrappedRow[c].size() ? wrappedRow[c][l] : " ";
+					oss << AlignText(cell, Columns[c].HeaderAlignment, Columns[c].Width)
+						<< (ascii ? "|" : "│");
+				}
+				if (l != h - 1) oss << '\n';
+			}
+			};
+
+		if (ascii) {
+			// Draw top/row separator:
+			for (const TextTableColumn& c : Columns) oss << '|' << c.HLineAscii;
+			oss << '|';
+			std::string rowSep = oss.str();	// Just so happens it's in the first row, so we can keep it like that.
+			oss << '\n';
+
+			// Draw Banner, headers:
+			std::vector<std::string> headers(Columns.size());
+			std::transform(Columns.begin(), Columns.end(), headers.begin(),
+				[](const TextTableColumn& c) { return c.Header; }
+			);
+			DrawRow(headers);
+
+			// Draw each row (item);
+			for (std::vector<std::string> item : Items) {
+				oss << '\n' << rowSep << '\n';
+				DrawRow(item);
+			}
+			oss << '\n' << rowSep;
+		}
+		else {			
+			// Draw Banner, top:
+			oss << "┌";
+			for (int i = 0; i < Columns.size(); i++) {
+				oss << Columns[i].HLine;
+				if (i != Columns.size() - 1) oss << "┬";
+			}
+			oss << "┐" << '\n';
+
+			// Draw Banner, headers:
+			std::vector<std::string> headers(Columns.size());
+			std::transform(Columns.begin(), Columns.end(), headers.begin(), 
+				[](const TextTableColumn& c) { return c.Header; }
+			);
+			DrawRow(headers);
+
+			// Draw each row (item):
+			for (std::vector<std::string> item : Items) {
+				// Draw top:
+				oss << "\n├";
+				for (std::size_t i = 0; i < Columns.size(); i++) {
+					oss << Columns[i].HLine;
+					if (i != Columns.size() - 1) oss << "┼";
+				}
+				oss << "┤\n";
+
+				// Draw data:
+				DrawRow(item);
+			}
+
+			// Draw bottom:
+			oss << "\n└";
+			for (std::size_t i = 0; i < Columns.size(); i++) {
+				oss << Columns[i].HLine;
+				if (i != Columns.size() - 1) oss << "┴";
+			}
+			oss << "┘";
+
 		}
 
 		return oss.str();

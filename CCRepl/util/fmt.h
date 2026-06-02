@@ -111,6 +111,7 @@ namespace fmt
 
 		// Output:
 		std::string Print(bool ascii = false) const;
+		std::string PrintML(bool ascii = false) const;
 		std::string PrintCompact(bool ascii = false) const;
 		std::vector<std::string> PrintVec() const;
 	};

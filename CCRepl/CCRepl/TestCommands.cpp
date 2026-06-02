@@ -203,6 +203,32 @@ namespace CCRepl {
 		ctx.WriteLine("yoo");
 	}
 
+	CMD_H(TextTableMultiline) {
+		auto Col = [](const std::size_t& mult) {
+			std::vector<std::string> r{
+				"Wow",
+				str::Repeat("Wow ", 5 * mult),
+				str::Repeat("wow", 15 * mult),
+				str::Repeat("ok ", 1 * mult)
+			};
+			return r;
+		};
+		
+		fmt::TextTable ttbl;
+		ttbl.AddColumnLeft("Header 1", 15)
+			.AddColumnLeft("Header 2", 30)
+			.AddColumnLeft("Header 3", 50)
+			.AddColumnRight("Header 4", 6);
+		
+		for (std::size_t i = 1; i < 8; i++) {
+			ttbl << Col(i);
+		}
+
+		ctx.WriteLine(ttbl.PrintML());
+		ctx.WriteLine(ttbl.PrintML(true));
+
+	}
+
 	TestCommands::TestCommands() {
 		Define(
 
@@ -268,7 +294,11 @@ namespace CCRepl {
 
 				Cmd("VariadicWriteLine")
 				.Aliases("vwl")
-				.Exec(VariadicPrintLine)
+				.Exec(VariadicPrintLine),
+
+				Cmd("TextTableMultiline")
+				.Aliases("ttm")
+				.Exec(TextTableMultiline)
 
 			)
 

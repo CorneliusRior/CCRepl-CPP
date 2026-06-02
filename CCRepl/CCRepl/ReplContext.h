@@ -41,8 +41,6 @@ namespace CCRepl {
 		bool Test(const std::string& input, bool run = false);
 		void CloseApp();
 		void Clear(const std::string& text = "") const;
-		//void WriteLine(const std::string& text = "") const;
-		//void Write(const std::string& text = "") const;
 		std::string ReadLine(const std::string& prompt = "");
 		std::function<void(const std::string&)> ReqClear;
 		std::function<void(const std::string&)> ReqWriteLine;
