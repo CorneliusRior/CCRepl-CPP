@@ -199,6 +199,24 @@ namespace str {
 		return oss.str();
 	}
 
+	std::string JoinList(const std::vector<std::string>& vec, const std::string& sep) {
+		std::ostringstream oss;
+		for (size_t i = 0; i < vec.size(); i++) {
+			oss << vec[i];
+			if (i != vec.size() - 1) oss << sep;
+		}
+		return oss.str();
+	}
+
+	std::string JoinList(const std::vector<std::string>& vec, char sep) {
+		std::ostringstream oss;
+		for (size_t i = 0; i < vec.size(); i++) {
+			oss << vec[i];
+			if (i != vec.size() - 1) oss << sep;
+		}
+		return oss.str();
+	}
+
 	std::string ToMultiLine(const std::string& text) {
 		std::ostringstream oss;
 		for (std::size_t i = 0; i < text.size(); i++) {

@@ -90,6 +90,10 @@ namespace str {
     std::string PrintList(const std::vector<std::string>& vec);
     // Prints a list with optional title, separation strings, start and end strings.
     std::string PresentList(const std::vector<std::string>& vec, std::string title = "", std::string sep = ", ", std::string start = "[ ", std::string end = " ]");
+    // Prints every item in a string vector, separated by string "sep" (default = ", ").
+    std::string JoinList(const std::vector<std::string>& vec, const std::string& sep = ", ");
+    // Prints every item in a string vector, separated by char "sep" (default = ' ').
+    std::string JoinList(const std::vector<std::string>& vec, char sep = ' ');
     // Converts every instance of "\n" in a string to a new line.
     std::string ToMultiLine(const std::string& text);
     // Prints an index line: key to left, truncated by col, value written from col, wraps or truncates at max unless oneline is true.
