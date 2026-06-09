@@ -1,6 +1,6 @@
 #pragma once
-#include "CommandArgs.h"
-#include "fmt.h"
+#include <CCRepl/CommandArgs.h>
+#include <util/fmt.h>
 
 #define CMD_H(name) static void name(CCRepl::ReplContext& ctx, CCRepl::CommandArgs& args)
 #define CMD_T(name) static bool name(CCRepl::ReplContext& ctx, CCRepl::CommandArgs& args)

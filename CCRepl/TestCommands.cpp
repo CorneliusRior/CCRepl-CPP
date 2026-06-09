@@ -1,8 +1,8 @@
 #include "pch.h"
 
-#include "CommandBuilder.h"
-#include "CommandSet.h"
-#include "ReplContext.h"
+#include <CCRepl/CommandBuilder.h>
+#include <CCRepl/CommandSet.h>
+#include <CCRepl/ReplContext.h>
 
 namespace CCRepl {
 

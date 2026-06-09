@@ -1,10 +1,9 @@
 
 #include <iostream>
 #include <Windows.h>
-#include "ReplContext.h"
-#include "BaseCommands.h"
-#include "ScptCommands.h"
-#include "ScriptService.h"
+#include <CCRepl/ReplContext.h>
+#include <CCRepl/BaseCommands.h>
+#include <CCRepl/ScptCommands.h>
 
 std::string about =  R"(CCRepl CLI (C++)
 2026, Cornelius Riordan.
@@ -30,7 +29,7 @@ int main()
     CCRepl::ReplContext ctx( &base, &scpt, &test );
     
     // Services (Script):
-    CTX_ADD_SVC(CCRepl::ScriptService, &ctx, std::filesystem::current_path() / "scripts");
+    CTX_ADD_SVC(CCRepl::ScriptService, &ctx, std::filesystem::current_path() / ".." / ".." / ".." / "scripts");
     
     ctx.AboutStr = about;
     ctx.MaxWidth = 160;

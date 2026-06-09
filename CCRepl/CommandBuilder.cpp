@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "CommandBuilder.h"
+#include <CCRepl/CommandBuilder.h>
 
 namespace CCRepl {
 

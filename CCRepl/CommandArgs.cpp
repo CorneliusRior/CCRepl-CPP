@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "CommandArgs.h"
-#include "ReplContext.h"
-#include "Script.h"
+#include <CCRepl/CommandArgs.h>
+#include <CCRepl/ReplContext.h>
+#include <CCRepl/Script.h>
 
 namespace CCRepl {
 

@@ -2,8 +2,8 @@
 #include <filesystem>
 #include <ranges>
 
-#include "Script.h"
-#include "ReplContext.h"
+#include <CCRepl/Script.h>
+#include <CCRepl/ReplContext.h>
 
 /*
 Macros, CCSS stands for "CC(Repl) Script Service".

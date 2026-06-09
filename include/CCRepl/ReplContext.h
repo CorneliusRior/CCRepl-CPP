@@ -2,11 +2,11 @@
 #include <future>
 #include <map>
 #include <typeindex>
-#include "CommandSet.h"
-#include "Tokenizers.h"
-#include "parsers.h"
-#include "ReplCommand.h"
-#include "Script.h"
+#include <CCRepl/CommandSet.h>
+#include <CCRepl/Tokenizers.h>
+#include <CCRepl/ReplCommand.h>
+#include <CCRepl/Script.h>
+#include <util/parsers.h>
 
 #define CTX_WAIT_SPIN(T, function, message, doneMessage) \
 	ctx.WaitSpinner<T>([&]() { return function; }, message, doneMessage)

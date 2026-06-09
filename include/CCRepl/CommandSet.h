@@ -1,6 +1,6 @@
 #pragma once
-#include "ReplCommand.h"
-#include "CommandBuilder.h"
+#include <CCRepl/ReplCommand.h>
+#include <CCRepl/CommandBuilder.h>
 
 namespace CCRepl {
 

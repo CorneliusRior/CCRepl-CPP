@@ -1,14 +1,14 @@
 #include "pch.h"
 #include <ranges>
 #include <set>
-#include "BaseCommands.h"
-#include "CommandBuilder.h"
-#include "CommandSet.h"
-#include "fmt.h"
-#include "ReplCommand.h"
-#include "ReplContext.h"
-#include "Script.h"
-#include "ScriptService.h"
+#include <CCRepl/BaseCommands.h>
+#include <CCRepl/CommandBuilder.h>
+#include <CCRepl/CommandSet.h>
+#include <CCRepl/ReplCommand.h>
+#include <CCRepl/ReplContext.h>
+#include <CCRepl/Script.h>
+#include <CCRepl/ScriptService.h>
+#include <util/fmt.h>
 
 namespace CCRepl {
 	

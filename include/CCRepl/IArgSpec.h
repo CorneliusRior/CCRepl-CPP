@@ -7,8 +7,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "ReplException.h"
-#include "str.h"
+#include <CCRepl/ReplException.h>
+#include <util/str.h>
 
 namespace CCRepl {
 	

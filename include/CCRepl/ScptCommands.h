@@ -1,6 +1,6 @@
 #pragma once
-#include "CommandSet.h"
-#include "ScriptService.h"
+#include <CCRepl/CommandSet.h>
+#include <CCRepl/ScriptService.h>
 
 namespace CCRepl {
 

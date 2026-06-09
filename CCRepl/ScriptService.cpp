@@ -1,5 +1,6 @@
 #include "pch.h"
-#include "ScriptService.h"
+#include <CCRepl/ScriptService.h>
+#include <util/fmt.h>
 
 namespace CCRepl {
 

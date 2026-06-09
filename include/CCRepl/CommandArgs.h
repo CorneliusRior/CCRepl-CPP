@@ -1,5 +1,5 @@
 #pragma once
-#include "IArgSpec.h"
+#include <CCRepl/IArgSpec.h>
 
 namespace CCRepl {
 

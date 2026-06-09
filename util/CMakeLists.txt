@@ -8,6 +8,8 @@ add_library(util STATIC
 
 target_include_directories(util
 	PUBLIC
+		${CMAKE_SOURCE_DIR}/include
+	PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}
 )
 

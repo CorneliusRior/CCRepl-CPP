@@ -1,6 +1,6 @@
 #pragma once
-#include "ReplCommand.h"
-#include "Parsers.h"
+#include <CCRepl/ReplCommand.h>
+#include <util/Parsers.h>
 
 namespace CCRepl {
 

@@ -1,6 +1,7 @@
 #include "pch.h"
-#include "ReplContext.h"
-#include "script.h"
+#include <CCRepl/ReplContext.h>
+#include <CCRepl/script.h>
+#include <util/fmt.h>
 
 namespace CCRepl {
 

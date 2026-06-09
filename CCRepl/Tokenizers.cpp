@@ -1,5 +1,9 @@
 #include "pch.h"
-#include "Tokenizers.h"
+#include <CCRepl/Tokenizers.h>
+#include <CCRepl/ReplException.h>
+#include <util/str.h>
+#include <util/fmt.h>
+#include <util/parsers.h>
 
 namespace CCRepl {
 

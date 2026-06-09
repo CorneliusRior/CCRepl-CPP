@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "ScptCommands.h"
+#include <CCRepl/ScptCommands.h>
 
 namespace CCRepl {
 

@@ -2,8 +2,9 @@
 #include <format>
 #include <string>
 #include <map>
-#include "CommandArgs.h"
-#include "Tokenizers.h"
+#include <CCRepl/CommandArgs.h>
+#include <CCRepl/Tokenizers.h>
+#include <util/fmt.h>
 
 #define SCRIPT_ERROR(msg) \
 	throw ScriptException(std::format("Script Error (Line #{}, Char {} '{}'): {}", FindLine(text, i), i, text[i], msg))

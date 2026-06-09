@@ -1,5 +1,5 @@
 #pragma once
-#include "CommandSet.h"
+#include <CCRepl/CommandSet.h>
 
 namespace CCRepl {
 

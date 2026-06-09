@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
-#include "str.h"
+#include <util/str.h>
 
 namespace parsers {
 	class ParseException : public std::runtime_error {

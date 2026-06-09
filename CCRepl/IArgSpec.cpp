@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "IArgSpec.h"
+#include <CCRepl/IArgSpec.h>
 
 namespace CCRepl {
 
