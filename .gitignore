@@ -10,6 +10,7 @@ x86/
 # CMake
 CMakeFiles/
 CMakeCache.txt
+build/
 
 # Compiled binaries
 *.exe
