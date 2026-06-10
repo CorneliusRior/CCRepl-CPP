@@ -30,3 +30,9 @@ target_compile_features(CCRepl
     PUBLIC
         cxx_std_20
 )
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(CCRepl PRIVATE /EHsc)
+elseif(MSVC)
+    target_compile_options(CCRepl PRIVATE /EHsc)
+endif()

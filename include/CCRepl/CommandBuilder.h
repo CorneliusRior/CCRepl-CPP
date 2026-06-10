@@ -72,7 +72,7 @@ namespace CCRepl {
 	private:
 
 		ReplCommand _cmd;
-		ReplCommand ToCmd(ReplCommand cmd) { return std::move(cmd); }
+		ReplCommand ToCmd(ReplCommand cmd) { return std::move(cmd); }		// Clang suggests this is redundant. I think it isn't.
 		ReplCommand ToCmd(CommandBuilder& builder) { return builder.Build(); }
 		ReplCommand ToCmd(CommandBuilder&& builder) { return builder.Build(); }
 

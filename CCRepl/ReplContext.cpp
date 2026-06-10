@@ -210,7 +210,7 @@ namespace CCRepl {
 		for (ReplCommand* c : cmd.Children) AssignAliases(*c, prefix + cmd.Name);
 
 		// Add aliases:
-		for (const std::string a : cmd.Aliases) {
+		for (const std::string& a : cmd.Aliases) {
 			AliasReg.emplace(str::ToLower(prefix + a), &cmd);
 			for (ReplCommand* c : cmd.Children) AssignAliases(*c, prefix + a);
 		}

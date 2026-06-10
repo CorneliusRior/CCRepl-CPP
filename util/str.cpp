@@ -57,7 +57,7 @@ namespace str {
 		std::replace_if(
 			r.begin(),
 			r.end(),
-			[](char c) { return c == '\n' || c == '\r' || c == '\n\r';},
+			[](char c) { return c == '\n' || c == '\r';},
 			' '
 		);
 
@@ -345,7 +345,6 @@ namespace str {
 	std::vector<std::string> AppendStringVectors(const std::vector<std::string>& v1, const std::vector<std::string>& v2) {
 		// Find dimensions of both of them:
 		std::size_t w1 = MaxLength(v1);
-		std::size_t w2 = MaxLength(v2);
 		std::size_t l1 = v1.size();
 		std::size_t l2 = v2.size();
 		std::size_t tl = std::max<size_t>({ l1, l2 });
@@ -387,7 +386,7 @@ namespace str {
 			oss.str("");
 			oss.clear();
 			};
-		auto FlushLine = [&oss, &r, &Reset, &w]() {
+		auto FlushLine = [&oss, &r, &Reset]() {
 			std::string l = oss.str();
 			if (!l.empty()) r.push_back(l);
 			Reset();

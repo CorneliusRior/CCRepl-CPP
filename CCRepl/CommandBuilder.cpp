@@ -36,7 +36,7 @@ namespace CCRepl {
 
 	ReplCommand CommandBuilder::Build() { return std::move(_cmd); }
 
-	CommandBuilder Cmd(std::string name) { return CommandBuilder(move(name)); }
+	CommandBuilder Cmd(std::string name) { return CommandBuilder(name); }
 
 
 }

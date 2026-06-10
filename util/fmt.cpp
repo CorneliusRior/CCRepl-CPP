@@ -62,7 +62,7 @@ namespace fmt
 
 	TextLine::TextLine() : Text("") {}
 	TextLine::TextLine(const std::string& text, bool indent, TextAlign alignment, std::size_t padLeft, std::size_t padRight)
-		: Text(text), Indent(indent), Alignment(alignment), PadRight(padRight), PadLeft(padLeft) { }
+		: Text(text), Indent(indent), Alignment(alignment), PadLeft(padLeft), PadRight(padRight) { }
 
 	TextLine::TextLine(const std::string& text, TextAlign alignment) : Text(text), Alignment(alignment) {}
 

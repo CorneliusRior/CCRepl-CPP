@@ -223,7 +223,7 @@ namespace CCRepl {
 
 					case ',': continue;
 
-					default: SCRIPT_ERROR("Unexpected char: " + c);
+					default: SCRIPT_ERROR(std::format("Unexpected char: '{}'", c));
 					}
 					continue;
 

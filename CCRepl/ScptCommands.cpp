@@ -125,7 +125,7 @@ namespace CCRepl {
 			break;
 		}
 		default:
-			throw ReplException("Unknown command mode: " + args.Mode());
+			throw ReplException("Unknown command mode: " + std::to_string(args.Mode()));
 		}
 	}
 
