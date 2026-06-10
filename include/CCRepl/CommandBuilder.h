@@ -1,6 +1,6 @@
 #pragma once
 #include <CCRepl/ReplCommand.h>
-#include <util/Parsers.h>
+#include <util/parsers.h>
 
 namespace CCRepl {
 
@@ -72,7 +72,7 @@ namespace CCRepl {
 	private:
 
 		ReplCommand _cmd;
-		ReplCommand ToCmd(ReplCommand cmd) { return std::move(cmd); }		// Clang suggests this is redundant. I think it isn't.
+		ReplCommand ToCmd(ReplCommand cmd) { return cmd; }		// Clang suggests this is redundant. I think it isn't.
 		ReplCommand ToCmd(CommandBuilder& builder) { return builder.Build(); }
 		ReplCommand ToCmd(CommandBuilder&& builder) { return builder.Build(); }
 

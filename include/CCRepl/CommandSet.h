@@ -8,7 +8,7 @@ namespace CCRepl {
 	protected:
 		std::vector<ReplCommand> commands_;
 
-		ReplCommand ToCmd(ReplCommand cmd) { return std::move(cmd); }
+		ReplCommand ToCmd(ReplCommand cmd) { return cmd; }	// removing std::move(), if this breaks, try return std::move(cmd)
 		ReplCommand ToCmd(CommandBuilder& builder) { return builder.Build(); }
 		ReplCommand ToCmd(CommandBuilder&& builder) { return builder.Build(); }
 
