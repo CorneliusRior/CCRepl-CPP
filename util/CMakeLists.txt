@@ -2,6 +2,7 @@ add_library(util STATIC
 	pch.cpp
 	util.cpp
 	fmt.cpp
+	ObjTbl.cpp
 	parsers.cpp
 	str.cpp
 )
