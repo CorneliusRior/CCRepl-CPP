@@ -4,7 +4,7 @@
 
 namespace fmt {    
 
-    // Interface for columns.
+    /* // Interface for columns.
     template <typename Obj>
     class IObjTblCol {
     public:
@@ -15,25 +15,33 @@ namespace fmt {
         TextAlign DataAlignment = TextAlign::Right;
         std::function<std::string(const Obj*)> Render;
         std::function<bool(const Obj*, const Obj*)> Order; 
-    };
+    }; */
 
     // Individual column.
-    template <typename Obj, typename T> 
-    class ObjTblCol : public IObjTblCol<Obj> {
+    template <typename Obj> 
+    class ObjTblCol /* : public IObjTblCol<Obj> */ {
     public:
+        std::string Header;
+        std::size_t Width;
+        TextAlign HeaderAlignment;
+        TextAlign DataAlignment;
+        std::function<std::string(const Obj*)> Render;
+        std::function<bool(const Obj*, const Obj*)> Order; 
+
         ObjTblCol(
             std::string header, 
             std::size_t width, 
             std::function<std::string(const Obj*)> renderFunc, 
             std::function<bool (const Obj*, const Obj*)> orderFunc, 
             TextAlign headerAlignment = TextAlign::Left, 
-            TextAlign dataAlignment = TextAlign::Left) {
-                this->Header = header;
+            TextAlign dataAlignment = TextAlign::Left) 
+            : Header(header), Width(width), HeaderAlignment(headerAlignment), DataAlignment(dataAlignment), Render(renderFunc), Order(orderFunc) {
+                /* this->Header = header;
                 this->Width = width;
                 this->HeaderAlignment = headerAlignment;
                 this->DataAlignment = dataAlignment;
                 this->Render = renderFunc;
-                this->Order = orderFunc;
+                this->Order = orderFunc; */
             }    
     };
 
@@ -49,11 +57,11 @@ namespace fmt {
     template <typename Obj>
     class ObjTbl {
     private:
-        std::vector<IObjTblCol<Obj>> columns_;
+        std::vector<ObjTblCol<Obj>> columns_;
         std::vector<Obj*> objects_;
     
     public:        
-        ObjTbl(std::vector<IObjTblCol<Obj>> columns, std::vector<Obj*> rows) : columns_(columns), objects_(rows) {}
+        ObjTbl(std::vector<ObjTblCol<Obj>> columns, std::vector<Obj*> rows) : columns_(columns), objects_(rows) {}
 
         // Returns pointer to the object on specified row.
         Obj* GetRow(std::size_t row) {
@@ -189,7 +197,7 @@ namespace fmt {
             // Draw data:
             for (const Obj* row : objects_) {
                 oss << rowSep;
-                for (const IObjTblCol<Obj>& col : columns_) {
+                for (const ObjTblCol<Obj>& col : columns_) {
                     oss << cellSep << AlignText(col.Render(row), col.DataAlignment, col.Width);
                 }
                 oss << cellSep;
@@ -217,5 +225,12 @@ namespace fmt {
             return oss.str();
         }
 
+        // Adds a string column.
+        ObjTbl& StrCol(const std::string& header, std::size_t width, std::function<std::string(const Obj*)> getFunc, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Left) {
+            columns_.push_back(ObjTblCol<Obj>(
+                header, width, getFunc, [&getFunc](const Obj* a, const Obj* b){ return getFunc(a) < getFunc(b); }, headerAlignment, dataAlignment 
+            ));
+            return *this;
+        }
     };
 }

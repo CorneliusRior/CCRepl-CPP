@@ -20,7 +20,6 @@ int main()
 {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
-    std::cout << __cplusplus << std::endl;
     std::cout << "CCRepl CLI (C++).\nType 'help' to see commands, 'exit' to quit, 'about' for more info.\n";
     CCRepl::BaseCommands base;
     CCRepl::ScptCommands scpt;

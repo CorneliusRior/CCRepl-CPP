@@ -316,45 +316,47 @@ namespace CCRepl {
 		for (Item& itm : itemVector) itemPtrs.emplace_back(&itm);
 
 		fmt::ObjTbl<Item> tbl({
-			fmt::ObjTblCol<Item, std::string>(
+			fmt::ObjTblCol<Item>(
 				"Name:", 20, 
 				[](const Item* itm){ return itm->name; },
 				[](const Item* a, const Item* b){ return a->name < b->name; }
 			),
-			fmt::ObjTblCol<Item, std::string>(
+			fmt::ObjTblCol<Item>(
 				"Description:", 30,
 				[](const Item* itm){ return itm->description; },
 				[](const Item* a, const Item* b){ return a->description < b->description; }
 			),
-			fmt::ObjTblCol<Item, int>(
+			fmt::ObjTblCol<Item>(
 				"Quantity:", 10,
 				[](const Item* itm){ return str::ToString(itm->quantity, 2, true); },
 				[](const Item* a, const Item* b){ return a->quantity < b->quantity; },
 				fmt::TextAlign::Left, fmt::TextAlign::Right
 			),
-			fmt::ObjTblCol<Item, double>(
+			fmt::ObjTblCol<Item>(
 				"Market Val.:", 15,
 				[](const Item* itm){ return str::ToString(itm->market_value, 2, true); },
 				[](const Item* a, const Item* b){ return a->market_value < b->market_value; },
 				fmt::TextAlign::Left, fmt::TextAlign::Right
 			),
-			fmt::ObjTblCol<Item, double>(
+			fmt::ObjTblCol<Item>(
 				"Change %:", 10,
 				[](const Item* itm){ return str::AsPct(itm->change_pct, 2); },
 				[](const Item* a, const Item* b){ return a->change_pct < b->change_pct; },
 				fmt::TextAlign::Left, fmt::TextAlign::Right
 			),
-			fmt::ObjTblCol<Item, Status>(
+			fmt::ObjTblCol<Item>(
 				"Status:", 10,
 				[](const Item* itm){ return ToString(itm->status); },
 				[](const Item* a, const Item* b){ return static_cast<int>(a->status) < static_cast<int>(b->status); }
 			),
-			fmt::ObjTblCol<Item, Priority>(
+			fmt::ObjTblCol<Item>(
 				"Priority:", 10,
 				[](const Item* itm){ return ToString(itm->priority); },
 				[](const Item* a, const Item* b){ return static_cast<int>(a->priority) < static_cast<int>(b->priority); }
 			)
 		}, itemPtrs);
+
+		tbl.StrCol("Name (2):", 20, [](const Item* itm){return itm->name;});
 
 		ctx.WriteLine(tbl.Print(fmt::TblRenderType::BoxCompact, 4, true));
 		fmt::ObjTbl tbl2 = tbl.Where([](const Item* itm){ return itm->change_pct > 0; });
