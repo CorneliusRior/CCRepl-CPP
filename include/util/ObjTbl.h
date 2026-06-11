@@ -2,24 +2,13 @@
 #include <util/fmt.h>
 #include <ranges>
 
+#define FMT_OTCOL_EXT(header, width, varname) header, width, [](const auto* obj){ return obj->varname; }
+
 namespace fmt {    
 
-    /* // Interface for columns.
-    template <typename Obj>
-    class IObjTblCol {
-    public:
-        virtual ~IObjTblCol() = default;       
-        std::string Header = "";
-        std::size_t Width = 10;
-        TextAlign HeaderAlignment = TextAlign::Left;
-        TextAlign DataAlignment = TextAlign::Right;
-        std::function<std::string(const Obj*)> Render;
-        std::function<bool(const Obj*, const Obj*)> Order; 
-    }; */
-
-    // Individual column.
+    // Column for a ObjTbl table:
     template <typename Obj> 
-    class ObjTblCol /* : public IObjTblCol<Obj> */ {
+    class ObjTblCol {
     public:
         std::string Header;
         std::size_t Width;
@@ -35,14 +24,7 @@ namespace fmt {
             std::function<bool (const Obj*, const Obj*)> orderFunc, 
             TextAlign headerAlignment = TextAlign::Left, 
             TextAlign dataAlignment = TextAlign::Left) 
-            : Header(header), Width(width), HeaderAlignment(headerAlignment), DataAlignment(dataAlignment), Render(renderFunc), Order(orderFunc) {
-                /* this->Header = header;
-                this->Width = width;
-                this->HeaderAlignment = headerAlignment;
-                this->DataAlignment = dataAlignment;
-                this->Render = renderFunc;
-                this->Order = orderFunc; */
-            }    
+            : Header(header), Width(width), HeaderAlignment(headerAlignment), DataAlignment(dataAlignment), Render(renderFunc), Order(orderFunc) {}    
     };
 
 
@@ -60,8 +42,26 @@ namespace fmt {
         std::vector<ObjTblCol<Obj>> columns_;
         std::vector<Obj*> objects_;
     
-    public:        
+    public:       
+        ObjTbl();
+        ObjTbl(std::vector<Obj*> rows) : objects_(rows) {}
+        ObjTbl(std::vector<ObjTblCol<Obj>> columns) : columns_(columns) {}
         ObjTbl(std::vector<ObjTblCol<Obj>> columns, std::vector<Obj*> rows) : columns_(columns), objects_(rows) {}
+
+        ObjTbl& operator<<(Obj* item) {
+            objects_.push_back(item); 
+            return *this;
+        }
+
+        ObjTbl& operator<<(Obj& item) {
+            objects_.push_back(&item);
+            return *this;
+        }
+
+        ObjTbl& operator<<(ObjTblCol<Obj> column) {
+            columns_.push_back(column);
+            return *this;
+        }
 
         // Returns pointer to the object on specified row.
         Obj* GetRow(std::size_t row) {
@@ -91,8 +91,8 @@ namespace fmt {
                 if (desc) std::ranges::reverse(objects_);
             }
             return *this;
-        }
-        
+        }                
+
         std::string Print(TblRenderType type = TblRenderType::BoxCompact, int orderBy = -1, bool desc = true) {
             // Order if applicable:
             OrderBy(orderBy, desc);
@@ -229,6 +229,27 @@ namespace fmt {
         ObjTbl& StrCol(const std::string& header, std::size_t width, std::function<std::string(const Obj*)> getFunc, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Left) {
             columns_.push_back(ObjTblCol<Obj>(
                 header, width, getFunc, [&getFunc](const Obj* a, const Obj* b){ return getFunc(a) < getFunc(b); }, headerAlignment, dataAlignment 
+            ));
+            return *this;
+        }
+
+        ObjTbl& IntCol(const std::string& header, std::size_t width, std::function<int(const Obj*)> getFunc, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Right) {
+            columns_.push_back(ObjTblCol<Obj>(
+                header, width, [&getFunc](const Obj* obj){ return std::to_string(getFunc(obj)); }, [&getFunc](const Obj* a, const Obj* b){ return getFunc(a) < getFunc(b); }, headerAlignment, dataAlignment
+            ));
+            return *this;
+        }
+
+        ObjTbl& DblCol(const std::string& header, std::size_t width, std::function<double(const Obj*)> getFunc, std::size_t prec = 2, bool compact = false, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Right) {
+            columns_.push_back(ObjTblCol<Obj>(
+                header, width, [&getFunc, &prec, &compact](const Obj* obj){ return str::ToString(getFunc(obj), prec, compact); }, [&getFunc](const Obj* a, const Obj* b){ return getFunc(a) < getFunc(b); }, headerAlignment, dataAlignment
+            ));
+            return *this;
+        }
+
+        ObjTbl& PctCol(const std::string& header, std::size_t width, std::function<double(const Obj*)> getFunc, std::size_t prec = 2, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Right) {
+            columns_.push_back(ObjTblCol<Obj>(
+                header, width, [&getFunc, &prec](const Obj* obj){ return str::AsPct(getFunc(obj), prec); }, [&getFunc](const Obj* a, const Obj* b){ return getFunc(a) < getFunc(b); }, headerAlignment, dataAlignment
             ));
             return *this;
         }

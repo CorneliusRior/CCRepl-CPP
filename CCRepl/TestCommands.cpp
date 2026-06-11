@@ -356,7 +356,12 @@ namespace CCRepl {
 			)
 		}, itemPtrs);
 
-		tbl.StrCol("Name (2):", 20, [](const Item* itm){return itm->name;});
+		//tbl.StrCol(FMT_OTCOL_EXT("Name (3):", 20, name))
+		//.PctCol(FMT_OTCOL_EXT("% (2)", 8, change_pct), 1)
+		//.DblCol(FMT_OTCOL_EXT("Market V(2):", 15, market_value), 1, true);
+
+		Item appended = Item("New entry", "Entry put in with << Operator", 100, 10000, 0.05, Status::Active, Priority::Low);
+		tbl << &appended;
 
 		ctx.WriteLine(tbl.Print(fmt::TblRenderType::BoxCompact, 4, true));
 		fmt::ObjTbl tbl2 = tbl.Where([](const Item* itm){ return itm->change_pct > 0; });
