@@ -3,6 +3,7 @@
 #include <CCRepl/CommandBuilder.h>
 #include <CCRepl/CommandSet.h>
 #include <CCRepl/ReplContext.h>
+#include <util/ObjTbl.h>
 
 namespace CCRepl {
 
@@ -229,6 +230,139 @@ namespace CCRepl {
 
 	}
 
+	// Some stuff for ObjTableTests:
+	// Represents the status/category of an item — good candidate for a column
+	enum class Status {
+	    Active,
+	    Inactive,
+	    Pending,
+	    Deprecated
+	};
+
+	std::string ToString(Status status) {
+		switch (status) {
+		case Status::Active: 		return "Active";
+		case Status::Inactive: 		return "Inactive";
+		case Status::Pending: 		return "Pending";
+		case Status::Deprecated: 	return "Deprecated";
+		default: return "Unknown Status";
+		}
+	}
+	
+	// Another column-worthy type: a simple tagged priority level
+	enum class Priority {
+	    Low,
+	    Medium,
+	    High,
+	    Critical
+	};
+
+	std::string ToString(Priority priority) {
+		switch (priority) {
+		case Priority::Low:			return "Low";
+	    case Priority::Medium:		return "Medium";
+	    case Priority::High:		return "High";
+	    case Priority::Critical:	return "Critical";
+		default: return "Unknown Priority";
+		}
+	}
+ 
+	class Item {
+	public:
+	    std::string name;
+	    std::string description;
+	    int         quantity;
+	    double      market_value;   // large double, e.g. 1'234'567.89
+	    double      change_pct;     // small double, e.g. 0.042 (4.2%)
+	    Status      status;
+	    Priority    priority;
+	
+	    Item(std::string name,
+	         std::string description,
+	         int         quantity,
+	         double      market_value,
+	         double      change_pct,
+	         Status      status,
+	         Priority    priority)
+	        : name(std::move(name))
+	        , description(std::move(description))
+	        , quantity(quantity)
+	        , market_value(market_value)
+	        , change_pct(change_pct)
+	        , status(status)
+	        , priority(priority)
+	    {}
+	};
+	
+	inline std::vector<Item> make_sample_items() {
+	    return {
+	        { "Yttrium Capacitor",  "High-freq resonance cap",   412,  1'482'300.00,  0.034,  Status::Active,     Priority::High     },
+	        { "Beryllium Rod",      "Structural support alloy",   87,    256'740.50, -0.012,  Status::Active,     Priority::Medium   },
+	        { "Cobalt Mesh",        "EMI shielding fabric",     1'203,    98'510.75,  0.007,  Status::Inactive,   Priority::Low      },
+	        { "Palladium Foil",     "Catalyst substrate",         34,  3'901'200.00,  0.151,  Status::Active,     Priority::Critical },
+	        { "Osmium Disc",        "Dense inertial dampener",    19,  7'234'000.00, -0.003,  Status::Pending,    Priority::High     },
+	        { "Hafnium Wire",       "Neutron absorber spool",    560,    487'230.25,  0.022,  Status::Active,     Priority::Medium   },
+	        { "Rhenium Plate",      "High-temp turbine lining",   73,  1'105'800.00, -0.041,  Status::Deprecated, Priority::Low      },
+	        { "Indium Slab",        "LCD electrode backing",    2'800,    312'450.00,  0.009,  Status::Active,     Priority::Medium   },
+	        { "Tellurium Crystal",  "Thermoelectric element",    145,    678'900.50,  0.063,  Status::Pending,    Priority::High     },
+	        { "Gallium Ingot",      "Semiconductor melt stock",  390,    204'175.00, -0.018,  Status::Inactive,   Priority::Low      },
+	    };
+	}
+
+	CMD_H(ObjTableTests) {
+		std::vector<Item> itemVector = make_sample_items();
+		std::vector<Item*> itemPtrs;
+		itemPtrs.reserve(itemVector.size());
+		for (Item& itm : itemVector) itemPtrs.emplace_back(&itm);
+
+		fmt::ObjTbl<Item> tbl({
+			fmt::ObjTblCol<Item, std::string>(
+				"Name:", 20, 
+				[](const Item* itm){ return itm->name; },
+				[](const Item* a, const Item* b){ return a->name < b->name; }
+			),
+			fmt::ObjTblCol<Item, std::string>(
+				"Description:", 30,
+				[](const Item* itm){ return itm->description; },
+				[](const Item* a, const Item* b){ return a->description < b->description; }
+			),
+			fmt::ObjTblCol<Item, int>(
+				"Quantity:", 10,
+				[](const Item* itm){ return str::ToString(itm->quantity, 2, true); },
+				[](const Item* a, const Item* b){ return a->quantity < b->quantity; },
+				fmt::TextAlign::Left, fmt::TextAlign::Right
+			),
+			fmt::ObjTblCol<Item, double>(
+				"Market Val.:", 15,
+				[](const Item* itm){ return str::ToString(itm->market_value, 2, true); },
+				[](const Item* a, const Item* b){ return a->market_value < b->market_value; },
+				fmt::TextAlign::Left, fmt::TextAlign::Right
+			),
+			fmt::ObjTblCol<Item, double>(
+				"Change %:", 10,
+				[](const Item* itm){ return str::AsPct(itm->change_pct, 2); },
+				[](const Item* a, const Item* b){ return a->change_pct < b->change_pct; },
+				fmt::TextAlign::Left, fmt::TextAlign::Right
+			),
+			fmt::ObjTblCol<Item, Status>(
+				"Status:", 10,
+				[](const Item* itm){ return ToString(itm->status); },
+				[](const Item* a, const Item* b){ return static_cast<int>(a->status) < static_cast<int>(b->status); }
+			),
+			fmt::ObjTblCol<Item, Priority>(
+				"Priority:", 10,
+				[](const Item* itm){ return ToString(itm->priority); },
+				[](const Item* a, const Item* b){ return static_cast<int>(a->priority) < static_cast<int>(b->priority); }
+			)
+		}, itemPtrs);
+
+		ctx.WriteLine(tbl.Print(fmt::TblRenderType::BoxCompact, 4, true));
+		fmt::ObjTbl tbl2 = tbl.Where([](const Item* itm){ return itm->change_pct > 0; });
+		ctx.WriteLine(tbl2.Print(fmt::TblRenderType::BoxCompact, 4, true));
+		tbl.Filter([](const Item* itm) { return itm->market_value > 1000000; });
+		ctx.WriteLine(tbl.Print());
+	}	
+
 	TestCommands::TestCommands() {
 		Define(
 
@@ -298,7 +432,10 @@ namespace CCRepl {
 
 				Cmd("TextTableMultiline")
 				.Aliases("ttm")
-				.Exec(TextTableMultiline)
+				.Exec(TextTableMultiline),
+
+				Cmd("ObjTbl")
+				.Exec(ObjTableTests)
 
 			)
 

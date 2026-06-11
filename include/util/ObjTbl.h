@@ -1,29 +1,221 @@
 #include <util/str.h>
 #include <util/fmt.h>
+#include <ranges>
 
 namespace fmt {    
-/*
-    class IObjColumn {
-    public:
-        virtual ~IObjColum() = default;
-        std::string Header;
-        std::size_t Width;
-        TextAlign HeaderAlignment = TextAlign::Left;
-        TextAlign DataAlignment = TextAlign::Left;
-        virtual std::string Render() const = 0;
-        
-    }
 
-
-    
-    //Something of an attempt to make a more advanced version of TextTable: Instead of it just being strings, it actually contrains a list of objects, which enables you to do things like select by row (int) and automatically order by one row or another.
-    
+    // Interface for columns.
     template <typename Obj>
-    class ObjTable {
-    private:
-
+    class IObjTblCol {
     public:
+        virtual ~IObjTblCol() = default;       
+        std::string Header = "";
+        std::size_t Width = 10;
+        TextAlign HeaderAlignment = TextAlign::Left;
+        TextAlign DataAlignment = TextAlign::Right;
+        std::function<std::string(const Obj*)> Render;
+        std::function<bool(const Obj*, const Obj*)> Order; 
+    };
+
+    // Individual column.
+    template <typename Obj, typename T> 
+    class ObjTblCol : public IObjTblCol<Obj> {
+    public:
+        ObjTblCol(
+            std::string header, 
+            std::size_t width, 
+            std::function<std::string(const Obj*)> renderFunc, 
+            std::function<bool (const Obj*, const Obj*)> orderFunc, 
+            TextAlign headerAlignment = TextAlign::Left, 
+            TextAlign dataAlignment = TextAlign::Left) {
+                this->Header = header;
+                this->Width = width;
+                this->HeaderAlignment = headerAlignment;
+                this->DataAlignment = dataAlignment;
+                this->Render = renderFunc;
+                this->Order = orderFunc;
+            }    
+    };
+
+
+    enum class TblRenderType {
+        Box,
+        BoxCompact,
+        Ascii,
+        AsciiCompact,
+        Borderless
+    };
+
+    template <typename Obj>
+    class ObjTbl {
+    private:
+        std::vector<IObjTblCol<Obj>> columns_;
+        std::vector<Obj*> objects_;
+    
+    public:        
+        ObjTbl(std::vector<IObjTblCol<Obj>> columns, std::vector<Obj*> rows) : columns_(columns), objects_(rows) {}
+
+        // Returns pointer to the object on specified row.
+        Obj* GetRow(std::size_t row) {
+            if (row < objects_.size()) return objects_[row];
+            else return nullptr;    // or could also throw?
+        }
+
+        // Returns new instance, only with object which satisfy filter function.
+        ObjTbl Where(std::function<bool(const Obj*)> filter) {
+            std::vector<Obj*> filtered;
+            std::ranges::copy_if(objects_, std::back_inserter(filtered), filter);
+            return ObjTbl<Obj>(columns_, filtered);
+        }
+
+        // Mutates this instance, only keeps objects which satisfy filter function.
+        ObjTbl& Filter(std::function<bool(const Obj*)> filter) {
+            std::vector<Obj*> filtered;
+            std::ranges::copy_if(objects_, std::back_inserter(filtered), filter);
+            objects_ = std::move(filtered);
+            return *this;
+        }
+
+        // Change the order of rows in accordance with a given column.
+        ObjTbl& OrderBy(int column = -1, bool desc = true) {
+            if (column >= 0 && column < columns_.size()) {
+                std::ranges::sort(objects_, columns_[column].Order);
+                if (desc) std::ranges::reverse(objects_);
+            }
+            return *this;
+        }
+        
+        std::string Print(TblRenderType type = TblRenderType::BoxCompact, int orderBy = -1, bool desc = true) {
+            // Order if applicable:
+            OrderBy(orderBy, desc);
+
+            // Define cell seperator & row seperator:
+            std::string cellSep;        // String we put between each cell (one char, "│" or "|" or " "
+            std::ostringstream rss;     // streamstream for string we put between each row.
+            std::string truncStr;       // Truncated string: … if utf-8, '-' if ascii.
+            std::string orderStr;       // Marker for column we order by: "▲" or "▼" if utf-8, just * if ascii (I don't like how 'v' & '^' look)
+
+            switch (type) {
+            case TblRenderType::Ascii: {
+                cellSep = "|";
+                rss << '\n';
+                for (const auto& col : columns_) 
+                    rss << '|' << str::Repeat('-', col.Width);
+                rss << "|\n";
+                truncStr = "-";
+                orderStr = "*";
+                break;                    
+            }
+            case TblRenderType::AsciiCompact: {
+                cellSep = "|";
+                rss << '\n';
+                truncStr = "-";
+                orderStr = "*";
+                break;  
+            }
+            case TblRenderType::Borderless: {
+                cellSep = " ";
+                rss << '\n';
+                truncStr = "-";
+                orderStr = "*" ;
+                break;
+            }
+            case TblRenderType::Box: {
+                cellSep = "│";
+                rss << "\n├";
+                for (std::size_t i = 0; i < columns_.size(); i++) {
+                    if (i > 0) rss << "┼";
+                    rss << str::Repeat("─", columns_[i].Width);
+                }                        
+                rss << "┤\n";
+                truncStr = "…";
+                orderStr = desc ? "▼ " : "▲ ";
+                break;
+            }
+            case TblRenderType::BoxCompact: {
+                cellSep = "│";
+                rss << '\n';
+                truncStr = "…";
+                orderStr = desc ? "▼ " : "▲ ";
+                break;
+            }
+            }
+            std::string rowSep = rss.str();
+            std::ostringstream oss;
+
+            // Draw top based on rendertype:
+            switch (type) {
+            case TblRenderType::Ascii:           
+            case TblRenderType::AsciiCompact:    
+            case TblRenderType::Borderless:      break; // Only Box & BoxCompact have this, rest is blank.
+            case TblRenderType::Box: 
+            case TblRenderType::BoxCompact: 
+                oss << "┌";
+                for (std::size_t i = 0; i < columns_.size(); i++) {
+                    if (i != 0) oss << "┬";
+                    oss << str::Repeat("─", columns_[i].Width);
+                }
+                oss << "┐\n";
+                break;
+            }
+
+            // Draw headers:
+            for (std::size_t i = 0; i < columns_.size(); i++) 
+                    oss << cellSep << AlignText(i == orderBy ? orderStr + columns_[i].Header : columns_[i].Header, columns_[i].HeaderAlignment, columns_[i].Width, truncStr);                
+                oss << cellSep;
+
+            // Draw header bottom if applicable:
+            switch(type) {
+            case TblRenderType::AsciiCompact:
+                oss << '\n';
+                for (const auto& col : columns_)
+                    oss << "|" << str::Repeat('-', col.Width);
+                oss << "|";
+                break;
+            case TblRenderType::Borderless:
+                oss << '\n';
+                break;
+            case TblRenderType::BoxCompact:
+                oss << "\n├";
+                for (std::size_t i = 0; i < columns_.size(); i++) { 
+                    if (i > 0) oss << "┼";
+                    oss << str::Repeat("─", columns_[i].Width);
+                }
+                oss << "┤";
+                break;
+            default: break;
+            }
+            
+            // Draw data:
+            for (const Obj* row : objects_) {
+                oss << rowSep;
+                for (const IObjTblCol<Obj>& col : columns_) {
+                    oss << cellSep << AlignText(col.Render(row), col.DataAlignment, col.Width);
+                }
+                oss << cellSep;
+            }
+
+            // Draw bottom:
+            switch (type) {
+            case TblRenderType::Ascii:
+                oss << rowSep;
+                break;
+            case TblRenderType::AsciiCompact:
+            case TblRenderType::Borderless:
+                break;
+            case TblRenderType::Box:
+            case TblRenderType::BoxCompact:
+                oss << "\n└";
+                for (std::size_t i = 0; i < columns_.size(); i++) {
+                    if (i > 0) oss << "┴";
+                    oss << str::Repeat("─", columns_[i].Width);
+                }
+                oss << "┘";
+                break;
+            }
+
+            return oss.str();
+        }
 
     };
-*/
 }
