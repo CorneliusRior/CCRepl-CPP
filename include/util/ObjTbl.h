@@ -2,7 +2,68 @@
 #include <util/fmt.h>
 #include <ranges>
 
-#define FMT_OTCOL_EXT(header, width, varname) header, width, [](const auto* obj){ return obj->varname; }
+#define FMT_OTCOL_ORDER_DEF(varname) [](const auto* a, const auto* b) { return a->varname < b->varname; }
+#define FMT_OTCOL_ORDER_ENUM(varname) [](const auto* a, const auto* b) { return static_cast<int>(a->varname) < static_cast<int>(b->varname); }
+
+// String named varname in ObjType, e.g.: FMT_OTCOL_STR(Item, "Name:", 20, name).
+#define FMT_OTCOL_STR(ObjType, header, width, varname) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return itm->varname; }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Left)
+
+// Int named varname in ObjType. For compact, use FMT_OTCOL_INT_C.
+#define FMT_OTCOL_INT(ObjType, header, width, varname) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return std::to_string(itm->varname); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// Int named varname in ObjType, truncates like 1,234,567 -> 1.2M.
+#define FMT_OTCOL_INT_C(ObjType, header, width, varname, prec) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return str::ToString(itm->varname, prec, true); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// Double named varname in ObjType, print w/ prec decimal places. For compact, use FMT_OTCOL_DBL_C.
+#define FMT_OTCOL_DBL(ObjType, header, width, varname, prec) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return str::ToString(itm->varname, prec, false); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// Double named varname in ObjType, truncates like 1,234,567 -> 1.2M.
+#define FMT_OTCOL_DBL_C(ObjType, header, width, varname, prec) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return str::ToString(itm->varname, prec, true); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// Double named varname in ObjType, printed as a percentage, with prec decimal places.
+#define FMT_OTCOL_PCT(ObjType, header, width, varname, prec) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return str::AsPct(itm->varname, prec); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// String named varname in ObjType, calls member function (ObjTbl::AddColumn)
+#define FMT_OTCOL_STR_M(header, width, varname) AddColumn(header, width, \
+    [](const auto* itm) { return itm->varname; }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Left)
+
+// Int named varname in ObjType, calls member function (ObjTbl::AddColumn). For compact, use FMT_OTCOL_INT_CM.
+#define FMT_OTCOL_INT_M(header, width, varname) AddColumn(header, width, \
+    [](const auto* itm) { return std::to_string(itm->varname); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// Int named varname in ObjType, truncates like 1,234,567 -> 1.2M. Calls member function (ObjTbl::AddColumn).
+#define FMT_OTCOL_INT_CM(header, width, varname, prec) AddColumn(header, width, \
+    [](const auto* itm) { return str::ToString(itm->varname, prec, true); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// Double named varname in ObjType, print w/ prec decimal places. Calls member function (ObjTbl::AddColumn). For compact, use FMT_OTCOL_DBL_CM.
+#define FMT_OTCOL_DBL_M(header, width, varname, prec) AddColumn(header, width, \
+    [](const auto* itm) { return str::ToString(itm->varname, prec, false); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// Double named varname in ObjType, truncates like 1,234,567 -> 1.2M. Calls member function (ObjTbl::AddColumn).
+#define FMT_OTCOL_DBL_CM(header, width, varname, prec) AddColumn(header, width, \
+    [](const auto* itm) { return str::ToString(itm->varname, prec, true); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// Double named varname in ObjType, printed as a percentage, with prec decimal places. Calls member function (ObjTbl::AddColumn).
+#define FMT_OTCOL_PCT_M(header, width, varname, prec) AddColumn(header, width, \
+    [](const auto* itm) { return str::AsPct(itm->varname, prec); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
 
 namespace fmt {    
 
@@ -12,10 +73,10 @@ namespace fmt {
     public:
         std::string Header;
         std::size_t Width;
-        TextAlign HeaderAlignment;
-        TextAlign DataAlignment;
         std::function<std::string(const Obj*)> Render;
         std::function<bool(const Obj*, const Obj*)> Order; 
+        TextAlign HeaderAlignment;
+        TextAlign DataAlignment;
 
         ObjTblCol(
             std::string header, 
@@ -24,7 +85,7 @@ namespace fmt {
             std::function<bool (const Obj*, const Obj*)> orderFunc, 
             TextAlign headerAlignment = TextAlign::Left, 
             TextAlign dataAlignment = TextAlign::Left) 
-            : Header(header), Width(width), HeaderAlignment(headerAlignment), DataAlignment(dataAlignment), Render(renderFunc), Order(orderFunc) {}    
+            : Header(header), Width(width), Render(renderFunc), Order(orderFunc), HeaderAlignment(headerAlignment), DataAlignment(dataAlignment) {}    
     };
 
 
@@ -81,6 +142,23 @@ namespace fmt {
             std::vector<Obj*> filtered;
             std::ranges::copy_if(objects_, std::back_inserter(filtered), filter);
             objects_ = std::move(filtered);
+            return *this;
+        }
+
+        // Returns new instance, only first n if positive, last n if negative, or all if 0.
+        ObjTbl FirstN(int n) {
+            if (n == 0) return *this;
+            std::size_t len = std::min<std::size_t>(objects_.size(), static_cast<std::size_t>(std::abs(n)));
+            if (n > 0) return ObjTbl(columns_, std::vector<Obj*>(objects_.begin(), objects_.begin() + len));
+            return ObjTbl(columns_, std::vector<Obj*>(objects_.end() - len, objects_.end()));
+        }
+
+        // Mutatues this instance, removes all but first n entries if positive, last n if negative, no change if 0.
+        ObjTbl& FilterFirstN(int n) {
+            if (n == 0) return *this;
+            std::size_t len = std::min<std::size_t>(objects_.size(), static_cast<std::size_t>(std::abs(n)));
+            if (n > 0) objects_ = std::vector<Obj*>(objects_.begin(), objects_.begin() + len);
+            else objects_ = std::vector<Obj*>(objects_.end() - len, objects_.end());
             return *this;
         }
 
@@ -225,32 +303,8 @@ namespace fmt {
             return oss.str();
         }
 
-        // Adds a string column.
-        ObjTbl& StrCol(const std::string& header, std::size_t width, std::function<std::string(const Obj*)> getFunc, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Left) {
-            columns_.push_back(ObjTblCol<Obj>(
-                header, width, getFunc, [&getFunc](const Obj* a, const Obj* b){ return getFunc(a) < getFunc(b); }, headerAlignment, dataAlignment 
-            ));
-            return *this;
-        }
-
-        ObjTbl& IntCol(const std::string& header, std::size_t width, std::function<int(const Obj*)> getFunc, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Right) {
-            columns_.push_back(ObjTblCol<Obj>(
-                header, width, [&getFunc](const Obj* obj){ return std::to_string(getFunc(obj)); }, [&getFunc](const Obj* a, const Obj* b){ return getFunc(a) < getFunc(b); }, headerAlignment, dataAlignment
-            ));
-            return *this;
-        }
-
-        ObjTbl& DblCol(const std::string& header, std::size_t width, std::function<double(const Obj*)> getFunc, std::size_t prec = 2, bool compact = false, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Right) {
-            columns_.push_back(ObjTblCol<Obj>(
-                header, width, [&getFunc, &prec, &compact](const Obj* obj){ return str::ToString(getFunc(obj), prec, compact); }, [&getFunc](const Obj* a, const Obj* b){ return getFunc(a) < getFunc(b); }, headerAlignment, dataAlignment
-            ));
-            return *this;
-        }
-
-        ObjTbl& PctCol(const std::string& header, std::size_t width, std::function<double(const Obj*)> getFunc, std::size_t prec = 2, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Right) {
-            columns_.push_back(ObjTblCol<Obj>(
-                header, width, [&getFunc, &prec](const Obj* obj){ return str::AsPct(getFunc(obj), prec); }, [&getFunc](const Obj* a, const Obj* b){ return getFunc(a) < getFunc(b); }, headerAlignment, dataAlignment
-            ));
+        ObjTbl& AddColumn(std::string header, std::size_t width, std::function<std::string(const Obj*)> renderFunc, std::function<bool(const Obj*, const Obj*)> orderFunc, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Left) {
+            columns_.push_back(ObjTblCol<Obj>(header, width, renderFunc, orderFunc, headerAlignment, dataAlignment));
             return *this;
         }
     };

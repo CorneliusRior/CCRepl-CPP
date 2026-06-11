@@ -315,7 +315,7 @@ namespace CCRepl {
 		itemPtrs.reserve(itemVector.size());
 		for (Item& itm : itemVector) itemPtrs.emplace_back(&itm);
 
-		fmt::ObjTbl<Item> tbl({
+		/* fmt::ObjTbl<Item> tbl({
 			fmt::ObjTblCol<Item>(
 				"Name:", 20, 
 				[](const Item* itm){ return itm->name; },
@@ -356,17 +356,36 @@ namespace CCRepl {
 			)
 		}, itemPtrs);
 
-		//tbl.StrCol(FMT_OTCOL_EXT("Name (3):", 20, name))
-		//.PctCol(FMT_OTCOL_EXT("% (2)", 8, change_pct), 1)
-		//.DblCol(FMT_OTCOL_EXT("Market V(2):", 15, market_value), 1, true);
+		tbl.StrCol(FMT_OTCOL_EXT("Name (3):", 20, name))
+		.PctCol(FMT_OTCOL_EXT("% (2)", 8, change_pct), 1)
+		.DblCol(FMT_OTCOL_EXT("Market V(2):", 15, market_value), 1, true); */
 
-		Item appended = Item("New entry", "Entry put in with << Operator", 100, 10000, 0.05, Status::Active, Priority::Low);
-		tbl << &appended;
+		//Item appended = Item("New entry", "Entry put in with << Operator", 100, 10000, 0.05, Status::Active, Priority::Low);
+		//tbl << &appended;
 
+		fmt::ObjTbl<Item> tbl({
+			FMT_OTCOL_STR(Item, "Name:", 20, name),
+			FMT_OTCOL_STR(Item, "Description:", 30, description),
+			FMT_OTCOL_INT_C(Item, "Quantity:", 10, quantity, 2),
+			FMT_OTCOL_DBL_C(Item, "Market Value:", 15, market_value, 2),
+			FMT_OTCOL_PCT(Item, "Change (%):", 12, change_pct, 2),
+			fmt::ObjTblCol<Item>("Status:", 10, [](const Item* itm) {return ToString(itm->status); }, FMT_OTCOL_ORDER_ENUM(status)),
+			fmt::ObjTblCol<Item>("Priority:", 10, [](const Item* itm) {return ToString(itm->priority); }, FMT_OTCOL_ORDER_ENUM(priority))
+		}, itemPtrs);
+		/* 
+		// Alternatively you could do this:
+		tblFMT_OTCOL_STR_M("Name:", 20, name)
+			.FMT_OTCOL_STR_M("Description:", 30, description)
+			.FMT_OTCOL_INT_CM("Quantity:", 10, quantity, 2)
+			.FMT_OTCOL_DBL_CM("Market Value:", 15, market_value, 2)
+			.FMT_OTCOL_PCT_M("Change:", 12, change_pct, 2)
+			.AddColumn("Status:", 10, [](const Item* itm) {return ToString(itm->status); }, FMT_OTCOL_ORDER_ENUM(status))
+			.AddColumn("Priority:", 10, [](const Item* itm) {return ToString(itm->priority); }, FMT_OTCOL_ORDER_ENUM(priority));
+ 		*/
 		ctx.WriteLine(tbl.Print(fmt::TblRenderType::BoxCompact, 4, true));
-		fmt::ObjTbl tbl2 = tbl.Where([](const Item* itm){ return itm->change_pct > 0; });
-		ctx.WriteLine(tbl2.Print(fmt::TblRenderType::BoxCompact, 4, true));
-		tbl.Filter([](const Item* itm) { return itm->market_value > 1000000; });
+		ctx.WriteLine(tbl.FirstN(-3).Print());		
+		ctx.WriteLine(tbl.Print());
+		tbl.FilterFirstN(5);
 		ctx.WriteLine(tbl.Print());
 	}	
 
