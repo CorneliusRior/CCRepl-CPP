@@ -333,7 +333,7 @@ namespace fmt {
 
         ObjTbl& AddRows(const std::vector<Obj>& rows) {
             objects_.reserve(objects_.size() + rows.size());
-            for (const auto Obj& o : rows) objects_.push_back(&o);
+            for (const Obj& o : rows) objects_.push_back(&o);
         }
     };
 }
