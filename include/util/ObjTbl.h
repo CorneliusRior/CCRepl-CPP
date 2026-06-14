@@ -328,11 +328,11 @@ namespace fmt {
             return *this;
         }
 
-        ObjTbl& AddRows(const std::vector<Obj*>& rows) {
+        ObjTbl& AddRows(std::vector<Obj*>& rows) {
             objects_.insert(objects_.end(), rows.begin(), rows.end());
         }
 
-        ObjTbl& AddRows(const std::vector<Obj>& rows) {
+        ObjTbl& AddRows(std::vector<Obj>& rows) {
             //objects_.reserve(objects_.size() + rows.size());
             for (auto& o : rows) objects_.push_back(&o);
         }
