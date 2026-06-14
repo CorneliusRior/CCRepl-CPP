@@ -32,7 +32,7 @@ target_compile_features(CCRepl
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(CCRepl PRIVATE /EHsc)
+    target_compile_options(CCRepl PRIVATE /EHsc -Wno-unused-function)
 elseif(MSVC)
     target_compile_options(CCRepl PRIVATE /EHsc)
 endif()

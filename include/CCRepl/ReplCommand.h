@@ -4,6 +4,8 @@
 
 #define CMD_H(name) static void name(CCRepl::ReplContext& ctx, CCRepl::CommandArgs& args)
 #define CMD_T(name) static bool name(CCRepl::ReplContext& ctx, CCRepl::CommandArgs& args)
+#define CMD_HDEF(name) void name(CCRepl::ReplContext& ctx, CCRepl::CommandArgs& args)
+#define CMD_TDEF(name) bool name(CCRepl::ReplContext& ctx, CCRepl::CommandArgs& args)
 
 namespace CCRepl {
 
