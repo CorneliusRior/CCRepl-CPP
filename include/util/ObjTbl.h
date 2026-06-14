@@ -129,12 +129,12 @@ namespace fmt {
             return *this;
         }        
 
-        ObjTbl& operator<<(const std::vector<Obj*>& items) {
+        ObjTbl& operator<<(std::vector<Obj*>& items) {
             AddRows(items);
             return *this;
         }
 
-        ObjTbl& operator<<(const std::vector<Obj>& items) {
+        ObjTbl& operator<<(std::vector<Obj>& items) {
             AddRows(items);
             return *this;
         }
