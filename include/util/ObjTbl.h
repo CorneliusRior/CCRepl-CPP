@@ -78,6 +78,15 @@ namespace fmt {
         TextAlign HeaderAlignment;
         TextAlign DataAlignment;
 
+        /*Column for a Object table.
+        
+        ObjTblCol<MyClass>(
+            "Header 1:", 12, 
+            [](const MyClass* itm) { return var1.ToString(); },
+            [](const MyClass* a, const MyClass* b) { return a->value < b-> value; },
+            TextAlign::Left, TextAlign::Right
+        );
+        */
         ObjTblCol(
             std::string header, 
             std::size_t width, 
@@ -116,6 +125,16 @@ namespace fmt {
 
         ObjTbl& operator<<(Obj& item) {
             objects_.push_back(&item);
+            return *this;
+        }        
+
+        ObjTbl& operator<<(const std::vector<Obj*>& items) {
+            AddRows(items);
+            return *this;
+        }
+
+        ObjTbl& operator<<(const std::vector<Obj>& items) {
+            AddRows(items);
             return *this;
         }
 
@@ -306,6 +325,15 @@ namespace fmt {
         ObjTbl& AddColumn(std::string header, std::size_t width, std::function<std::string(const Obj*)> renderFunc, std::function<bool(const Obj*, const Obj*)> orderFunc, TextAlign headerAlignment = TextAlign::Left, TextAlign dataAlignment = TextAlign::Left) {
             columns_.push_back(ObjTblCol<Obj>(header, width, renderFunc, orderFunc, headerAlignment, dataAlignment));
             return *this;
+        }
+
+        ObjTbl& AddRows(const std::vector<Obj*>& rows) {
+            objects_.insert(objects_.end(), rows.begin(), rows.end());
+        }
+
+        ObjTbl& AddRows(const std::vector<Obj>& rows) {
+            objects_.reserve(objects_.size() + rows.size());
+            for (const auto Obj& o : rows) objects_.push_back(&o);
         }
     };
 }
