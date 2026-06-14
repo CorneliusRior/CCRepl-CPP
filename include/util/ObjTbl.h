@@ -111,33 +111,46 @@ namespace fmt {
     class ObjTbl {
     private:
         std::vector<ObjTblCol<Obj>> columns_;
-        std::vector<Obj*> objects_;
+        std::vector<const Obj*> objects_;
     
     public:       
         ObjTbl();
-        ObjTbl(std::vector<Obj*> rows) : objects_(rows) {}
-        ObjTbl(std::vector<ObjTblCol<Obj>> columns) : columns_(columns) {}
-        ObjTbl(std::vector<ObjTblCol<Obj>> columns, std::vector<Obj*> rows) : columns_(columns), objects_(rows) {}
+        ObjTbl(std::vector<const Obj*> rows) : objects_(rows) {}
+        ObjTbl(std::vector<ObjTblCol<Obj>> columns) : columns_(std::move(columns)) {}
+        ObjTbl(std::vector<ObjTblCol<Obj>> columns, std::vector<const Obj*> rows) : columns_(std::move(columns)), objects_(rows) {}
+        ObjTbl(std::vector<ObjTblCol<Obj>> columns, const std::vector<Obj*>& rows) : columns_(std::move(columns)) {
+            for (const Obj* row : rows) objects_.push_back(row);
+        }
 
-        ObjTbl& operator<<(Obj* item) {
+        ObjTbl& operator<<(const Obj* item) {
             objects_.push_back(item); 
             return *this;
         }
 
-        ObjTbl& operator<<(Obj& item) {
+        ObjTbl& operator<<(const Obj& item) {
             objects_.push_back(&item);
             return *this;
         }        
 
-        ObjTbl& operator<<(std::vector<Obj*>& items) {
+        ObjTbl& operator<<(const std::vector<const Obj*>& items) {
             AddRows(items);
             return *this;
         }
 
-        ObjTbl& operator<<(std::vector<Obj>& items) {
+        ObjTbl& operator<<(const std::vector<Obj*>& items) {
             AddRows(items);
             return *this;
         }
+
+        ObjTbl& operator<<(const std::vector<Obj>& items) {
+            AddRows(items);
+            return *this;
+        }
+
+        /*Deleted function.
+        If you were directed here by a compiler error, you probably declared an object or object vector inside of the function arguments.
+        ObjTbl uses pointers to existing objects, please declare them outside.*/
+        ObjTbl& operator<<(std::vector<Obj>&& items) = delete;
 
         ObjTbl& operator<<(ObjTblCol<Obj> column) {
             columns_.push_back(column);
@@ -145,40 +158,40 @@ namespace fmt {
         }
 
         // Returns pointer to the object on specified row.
-        Obj* GetRow(std::size_t row) {
+        const Obj* GetRow(std::size_t row) {
             if (row < objects_.size()) return objects_[row];
             else return nullptr;    // or could also throw?
         }
 
         // Returns new instance, only with object which satisfy filter function.
-        ObjTbl Where(std::function<bool(const Obj*)> filter) {
-            std::vector<Obj*> filtered;
+        ObjTbl Where(std::function<bool(const Obj*)> filter) const {
+            std::vector<const Obj*> filtered;
             std::ranges::copy_if(objects_, std::back_inserter(filtered), filter);
             return ObjTbl<Obj>(columns_, filtered);
         }
 
         // Mutates this instance, only keeps objects which satisfy filter function.
         ObjTbl& Filter(std::function<bool(const Obj*)> filter) {
-            std::vector<Obj*> filtered;
+            std::vector<const Obj*> filtered;
             std::ranges::copy_if(objects_, std::back_inserter(filtered), filter);
             objects_ = std::move(filtered);
             return *this;
         }
 
         // Returns new instance, only first n if positive, last n if negative, or all if 0.
-        ObjTbl FirstN(int n) {
+        ObjTbl FirstN(int n) const {
             if (n == 0) return *this;
             std::size_t len = std::min<std::size_t>(objects_.size(), static_cast<std::size_t>(std::abs(n)));
-            if (n > 0) return ObjTbl(columns_, std::vector<Obj*>(objects_.begin(), objects_.begin() + len));
-            return ObjTbl(columns_, std::vector<Obj*>(objects_.end() - len, objects_.end()));
+            if (n > 0) return ObjTbl(columns_, std::vector<const Obj*>(objects_.begin(), objects_.begin() + len));
+            return ObjTbl(columns_, std::vector<const Obj*>(objects_.end() - len, objects_.end()));
         }
 
         // Mutatues this instance, removes all but first n entries if positive, last n if negative, no change if 0.
         ObjTbl& FilterFirstN(int n) {
             if (n == 0) return *this;
             std::size_t len = std::min<std::size_t>(objects_.size(), static_cast<std::size_t>(std::abs(n)));
-            if (n > 0) objects_ = std::vector<Obj*>(objects_.begin(), objects_.begin() + len);
-            else objects_ = std::vector<Obj*>(objects_.end() - len, objects_.end());
+            if (n > 0) objects_ = std::vector<const Obj*>(objects_.begin(), objects_.begin() + len);
+            else objects_ = std::vector<const Obj*>(objects_.end() - len, objects_.end());
             return *this;
         }
 
@@ -328,13 +341,24 @@ namespace fmt {
             return *this;
         }
 
-        ObjTbl& AddRows(std::vector<Obj*>& rows) {
-            objects_.insert(objects_.end(), rows.begin(), rows.end());
+        ObjTbl& AddRows(const std::vector<const Obj*>& rows) {
+            for (const Obj* row : rows) objects_.push_back(row);
+            return *this;
         }
 
-        ObjTbl& AddRows(std::vector<Obj>& rows) {
-            //objects_.reserve(objects_.size() + rows.size());
-            for (auto& o : rows) objects_.push_back(&o);
+        ObjTbl& AddRows(const std::vector<Obj*>& rows) {
+            for (const Obj* row : rows) objects_.push_back(row);
+            return *this;
         }
+
+        ObjTbl& AddRows(const std::vector<Obj>& rows) {
+            for (const Obj& o : rows) objects_.push_back(&o);
+            return *this;
+        }
+
+        /*Deleted function.
+        If you were directed here by a compiler error, you probably declared an object or object vector inside of the function arguments.
+        ObjTbl uses pointers to existing objects, please declare them outside.*/
+        ObjTbl& AddRows(std::vector<Obj>&& rows) = delete;
     };
 }

@@ -371,10 +371,12 @@ namespace CCRepl {
 			FMT_OTCOL_PCT(Item, "Change (%):", 12, change_pct, 2),
 			fmt::ObjTblCol<Item>("Status:", 10, [](const Item* itm) {return ToString(itm->status); }, FMT_OTCOL_ORDER_ENUM(status)),
 			fmt::ObjTblCol<Item>("Priority:", 10, [](const Item* itm) {return ToString(itm->priority); }, FMT_OTCOL_ORDER_ENUM(priority))
-		}, itemPtrs);
+		});
+
+		tbl << itemPtrs;
 		/* 
 		// Alternatively you could do this:
-		tblFMT_OTCOL_STR_M("Name:", 20, name)
+		tbl.FMT_OTCOL_STR_M("Name:", 20, name)
 			.FMT_OTCOL_STR_M("Description:", 30, description)
 			.FMT_OTCOL_INT_CM("Quantity:", 10, quantity, 2)
 			.FMT_OTCOL_DBL_CM("Market Value:", 15, market_value, 2)
