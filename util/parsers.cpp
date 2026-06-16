@@ -57,11 +57,43 @@ namespace parsers {
 			if (!iss.fail()) {
 				tm.tm_isdst = -1;
 				std::mktime(&tm);
+				ValidateTime(tm);
 				return tm;
 			}
 		}
 
 		throw ParseException();
+	}
+
+	// YMD
+	std::tm PrsDate(const std::string& text) {
+		const char* formats[] = {
+			"%Y-%m-%d",
+			"%Y/%m/%d"
+		};
+
+		for (const char* fmt : formats) {
+			std::tm tm{};
+			std::istringstream iss(text);
+			iss >> std::get_time(&tm, fmt);
+			if (!iss.fail()) {
+				tm.tm_isdst = -1;
+				std::mktime(&tm);
+				return tm;
+			}
+		}
+
+		throw ParseException();
+	}
+
+	// Stored as YYYYMMDD
+	std::tm PrsDate(int num) {
+		std::tm r{};
+		r.tm_year = num / 10000 - 1900;
+		r.tm_mon = (num / 100) % 100 - 1;
+		r.tm_mday = num % 100;
+		ValidateDate(r);
+		return r;
 	}
 
 	// Try:
@@ -114,5 +146,52 @@ namespace parsers {
 			return true;
 		}
 		catch (const ParseException&) { return false; }
+	}
+
+	bool TryDate(const std::string& text, std::tm& v) {
+		try {
+			v = PrsDate(text);
+			return true;
+		}
+		catch (const ParseException&) { return false; }
+	}
+
+	bool TryDate(int num, std::tm& v) {
+		try {
+			v = PrsDate(num);
+			return true;
+		}
+		catch (const ParseException&) { return false; }
+	}
+
+	int ToIntDate(const std::tm& t) {
+		return ((t.tm_year + 1900) * 10000) + ((t.tm_mon + 1) * 100) + (t.tm_mday);
+	}
+
+	void ValidateTime(const std::tm& t) {
+		std::tm check = t;
+		std::time_t tt = std::mktime(&check);
+		if (tt == -1 || 
+			check.tm_year != t.tm_year || 
+			check.tm_mon != t.tm_mon ||
+			check.tm_mday != t.tm_mday ||
+			check.tm_hour != t.tm_hour ||
+			check.tm_min != t.tm_min ||
+			check.tm_sec != t.tm_sec) 
+			throw ParseException();
+	}
+
+	void ValidateDate(const std::tm& t) {
+		std::tm check = t;
+		check.tm_hour = 12;
+		check.tm_min = 0;
+		check.tm_sec = 0;
+
+		std::time_t tt = std::mktime(&check);
+		if (tt == -1 || 
+			check.tm_year != t.tm_year || 
+			check.tm_mon != t.tm_mon ||
+			check.tm_mday != t.tm_mday) 
+			throw ParseException();
 	}
 }

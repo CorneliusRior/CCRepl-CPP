@@ -157,10 +157,6 @@ namespace CCRepl {
 		}
 	}
 
-	// Overrides:
-	void ReplContext::WriteLine(double value) const { std::cout << value << std::endl; }
-	void ReplContext::Write(double value) const { std::cout << value; }
-
 	void ReplContext::RegCmd(ReplCommand cmd) {
 		ReplCommand* reg = AssignAddresses(cmd, nullptr);
 		AssignAliases(*reg, "");

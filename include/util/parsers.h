@@ -20,6 +20,8 @@ namespace parsers {
 	std::size_t PrsSize_t(const std::string& text);
 	bool PrsBool(const std::string& text);
 	std::tm PrsTime(const std::string& text);
+	std::tm PrsDate(const std::string& text);
+	std::tm PrsDate(int num);
 
 	bool TryString(const std::string& text, std::string& v);
 	bool TryString_ML(const std::string& text, std::string& v);
@@ -28,4 +30,10 @@ namespace parsers {
 	bool TrySize_t(const std::string& text, std::size_t& v);
 	bool TryBool(const std::string& text, bool& v);
 	bool TryTime(const std::string& text, std::tm& v);
+	bool TryDate(const std::string& text, std::tm& v);
+	bool TryDate(int num, std::tm& v);
+
+	int ToIntDate(const std::tm& date);	// Returns int which is YYYYMMDD, can be parsed w/ PrsDate(int)
+	void ValidateTime(const std::tm& t);	// Throws if invalid. 
+	void ValidateDate(const std::tm& t);	// Throws if invalid. Time can be uninitialized
 }

@@ -391,6 +391,130 @@ namespace CCRepl {
 		ctx.WriteLine(tbl.Print());
 	}	
 
+	CMD_H(TestPrsTime) {
+		ctx.WriteLine("Too Lazy to bother with writing inputs, so we'll just do manual:");
+
+		// PrsTime	
+		ctx.WriteLine("\n\n--parsers::PrsTime():--");
+		std::vector<std::string> PrsTimeStrs {
+			"2025-01-01",
+			"2025-05-16 23:01:00",
+			"1987/01/30 06:30:00"
+		};
+		for (const std::string& str : PrsTimeStrs) {
+			std::tm t = parsers::PrsTime(str);
+			ctx << "'" << str << "':\n"
+				<< std::put_time(&t, "%Y-%m-%d %H:%M:%S")
+				<< "\n\n";			
+		}
+
+		// PrsDate (str)
+		ctx.WriteLine("\n\n--parsers::PrsDate(std::string):--");
+		std::vector<std::string> PrsDateStrs {
+			"2077-09-15",
+			"1900-01-01",
+			"2026/06/16"
+		};
+		for (const std::string& str : PrsDateStrs) {
+			std::tm t = parsers::PrsDate(str);
+			ctx << "'" << str << "':\n"
+				<< std::put_time(&t, "%Y-%m-%d")
+				<< "\n\n";
+		}
+
+		// PrsDate (int)
+		ctx.WriteLine("\n\n--parsers::PrsDate(int):--");
+		std::vector<int> PrsDateInts {
+			20260616,
+			//19010101,
+			20270415,
+			20000415,
+			20000101
+		};
+		for (const int& nt : PrsDateInts) {
+			std::tm t = parsers::PrsDate(nt);
+			ctx << "'" << nt << "':\n"
+				<< std::put_time(&t, "%Y-%m-%d")
+				<< "\n\n";
+		}
+
+		// TryTime
+		ctx.WriteLine("\n\n--parsers::TryTime():--");
+		std::vector<std::string> TryTimeStrs {
+			"2025-01-01",
+			"2025-05-16 23:01:00",
+			"1987/01/30 06:30:00",
+			"1899-05-15 23:23:23",
+			"2000-01-05 25:60:60",
+			"2026-06-15 A billion o clock"
+		};
+		for (const std::string& str : TryTimeStrs) {
+			ctx << "'" << str << "':";
+			std::tm t{};
+			if (parsers::TryTime(str, t))
+				ctx << " [x]\n" << std::put_time(&t, "%Y-%m-%d %H:%M:%S");
+			else ctx << " [ ]";
+			ctx << "\n\n";			
+		}
+
+		// TryDate (str)
+		ctx.WriteLine("\n\n--parsers::TryDate(std::string):--");
+		std::vector<std::string> TryDateStrs {
+			"2077-09-15",
+			"1900-01-01",
+			"2026/06/16",
+			"1899-05-16",
+			"2025-04-31",
+			"Yesterday"
+		};
+		for (const std::string& str : TryDateStrs) {
+			ctx << "'" << str << "':";
+			std::tm t{};
+			if (parsers::TryDate(str, t))
+				ctx << " [x]\n" << std::put_time(&t, "%Y-%m-%d");
+			else ctx << " [ ]";
+			ctx << "\n\n";			
+		}
+
+		// TryDate (int)
+		ctx.WriteLine("\n\n--parsers::TryDate(int):--");
+		std::vector<int> TryDateInts {
+			20260616,
+			19010101,
+			20270415,
+			20000415,
+			20000101,
+			29,
+			999999999,
+			18990516,
+			20250431,
+			20251300
+		};
+		for (const int& nt : TryDateInts) {
+			ctx << "'" << nt << "':";
+			std::tm t{};
+			if (parsers::TryDate(nt, t))
+				ctx << " [x]\n" << std::put_time(&t, "%Y-%m-%d");
+			else ctx << " [ ]";
+			ctx << "\n\n";			
+		}
+
+		// ToDateInt
+		ctx.WriteLine("\n\n--parsers::ToDateInt:--");
+		std::vector<std::tm> ToDateTms {
+			parsers::PrsDate(20000101),
+			parsers::PrsDate(20231215),
+			parsers::PrsDate(19990704),
+			parsers::PrsDate(20240229),
+			parsers::PrsDate(20100615),
+			parsers::PrsDate(20221031)
+		};
+		for (const std::tm& date : ToDateTms) {
+			ctx << std::put_time(&date, "%Y-%m-%d") << '\n'
+				<< parsers::ToIntDate(date) << '\n';
+		}
+	}
+
 	TestCommands::TestCommands() {
 		Define(
 
@@ -463,7 +587,10 @@ namespace CCRepl {
 				.Exec(TextTableMultiline),
 
 				Cmd("ObjTbl")
-				.Exec(ObjTableTests)
+				.Exec(ObjTableTests),
+
+				Cmd("PrsTime")
+				.Exec(TestPrsTime)
 
 			)
 

@@ -58,15 +58,11 @@ namespace CCRepl {
 		std::function<void(std::string text)> ReqWriteStatus;
 		std::function<void(std::string text)> ReqClearStatus;
 
-		// Overloads:
-		void WriteLine(double value) const;
-		void Write(double value) const;
-
 		template<typename... Txt>
 		void WriteLine(Txt&&... text) const {			
 			std::ostringstream oss;
 			auto WriteOne = [&](auto&& item) {
-				if (oss.tellp() > 0) oss << ", ";
+				if (oss.tellp() > 0) oss << " ";
 				oss << std::forward<decltype(item)>(item);
 			};
 			(WriteOne(std::forward<Txt>(text)), ...);
@@ -75,17 +71,27 @@ namespace CCRepl {
 			else throw ReplException("ReqWriteLine not set.");
 		}
 
+		void Write(const std::string& text) const {
+			ReqWrite(text);
+		}
+
 		template<typename... Txt>
 		void Write(Txt&&... text) const {
 			std::ostringstream oss;
 			auto WriteOne = [&](auto&& item) {
-				if (oss.tellp() > 0) oss << ", ";
+				if (oss.tellp() > 0) oss << " ";
 				oss << std::forward<decltype(item)>(item);
 				};
 			(WriteOne(std::forward<Txt>(text)), ...);
 
 			if (ReqWriteLine) ReqWrite(oss.str());
 			else throw ReplException("ReqWriteLine not set.");
+		}
+
+		template<typename T>
+		ReplContext& operator<<(const T& text) {
+			Write(text);
+			return *this;
 		}
 
 		/*
