@@ -93,7 +93,7 @@ namespace CCRepl {
 		std::optional<T> Get(std::size_t pos) const {
 			if (pos >= Args.size()) throw ReplException(std::format("Argument out of range. Args.Size() = {}, pos = {}, in command '{}'.", Args.size(), pos, CommandAddress));
 			auto* arg = dynamic_cast<ArgValue<T>*>(Args[pos].get());
-			if (!arg) throw ReplException("Argument type mismatch.");
+			if (!arg) throw ReplException(std::format("Argument type mismatch ({}, != {}).", STR_VAR(pos), str::TypeString<T>()));
 			return arg->Value;
 		}
 		
