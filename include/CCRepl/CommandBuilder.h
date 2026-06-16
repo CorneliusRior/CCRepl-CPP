@@ -41,6 +41,7 @@ namespace CCRepl {
 	CmdArg<std::size_t> SztArg(std::string name, ArgMode mode = ArgMode::Required, std::optional<std::size_t> fallback = std::nullopt, std::string prompt = "", std::string retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" });
 	CmdArg<std::string> StrArg(std::string name, ArgMode mode = ArgMode::Required, std::optional<std::string> fallback = std::nullopt, std::string prompt = "", std::string retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" });
 	CmdArg<std::tm> DtmArg(std::string name, ArgMode mode = ArgMode::Required, std::optional<std::tm> fallback = std::nullopt, std::string prompt = "", std::string retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" });
+	CmdArg<std::tm> DatArg(std::string name, ArgMode mode = ArgMode::Required, std::optional<std::tm> fallback = std::nullopt, std::string prompt = "", std::string retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" });
 
 	template<typename T>
 	class ArgBuilder {

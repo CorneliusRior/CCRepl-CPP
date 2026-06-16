@@ -392,6 +392,13 @@ namespace CCRepl {
 	}	
 
 	CMD_H(TestPrsTime) {
+
+		std::optional<std::tm> testTime = args.Get<std::tm>(0);
+		if (testTime) {
+			ctx << "Parsed arg as: " << std::put_time(&testTime.value(), "%Y-%m-%d") << '\n';
+			return;
+		}
+
 		ctx.WriteLine("Too Lazy to bother with writing inputs, so we'll just do manual:");
 
 		// PrsTime	
@@ -591,6 +598,7 @@ namespace CCRepl {
 
 				Cmd("PrsTime")
 				.Exec(TestPrsTime)
+				.Args(DatArg("DateTest", ArgMode::Optional))
 
 			)
 
