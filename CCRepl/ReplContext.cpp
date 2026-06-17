@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <iostream>
 #include <CCRepl/ReplContext.h>
+#include <util/ansi.h>
 
 namespace CCRepl {
 
@@ -27,11 +28,11 @@ namespace CCRepl {
 			CommandArgs args(*this, cmd, tokens.args, tokens.opts);
 			cmd->Execute(*this, args);
 		}
-		catch (const ReplUserException& ex) { WriteLine(std::format("User error: {}", ex.what())); }
-		catch (const ReplException& ex) { WriteLine(std::format("Repl Error: {}", ex.what())); }
-		catch (const ReplCancel& ex) { WriteLine(std::format("Cancelled: {}", ex.what())); }
-		catch (const std::runtime_error& ex) { WriteLine(std::format("Error: {}", ex.what())); }
-		catch (...) { WriteLine("Unknown error."); }
+		catch (const ReplUserException& ex) { WriteLine(std::format("{}User error:{} {}", ansi::red, ansi::reset, ex.what())); }
+		catch (const ReplException& ex) { WriteLine(std::format("{}Repl Error:{} {}", ansi::red, ansi::reset, ex.what())); }
+		catch (const ReplCancel& ex) { WriteLine(std::format("{}Cancelled:{} {}", ansi::cyan, ansi::reset, ex.what())); }
+		catch (const std::runtime_error& ex) { WriteLine(std::format("{}Error:{} {}", ansi::red, ansi::reset, ex.what())); }
+		catch (...) { WriteLine(std::format("Unknown error.", ansi::red, ansi::reset)); }
 	}
 
 	// Overload which parses raw text into tokens first:
@@ -40,11 +41,11 @@ namespace CCRepl {
 			CommandTokens tk = TokenizeParen(input);
 			Execute(tk);
 		}
-		catch (const ReplUserException& ex) { WriteLine(std::format("User error: {}", ex.what())); }
-		catch (const ReplException& ex) { WriteLine(std::format("Repl Error: {}", ex.what())); }
-		catch (const ReplCancel& ex) { WriteLine(std::format("Cancelled: {}", ex.what())); }
-		catch (const std::runtime_error& ex) { WriteLine(std::format("Error: {}", ex.what())); }
-		catch (...) { WriteLine("Unknown error."); }		
+		catch (const ReplUserException& ex) 	{ WriteLine(std::format("{}User error:{} {}", ansi::red, ansi::reset, ex.what())); }
+		catch (const ReplException& ex) 		{ WriteLine(std::format("{}Repl Error:{} {}", ansi::red, ansi::reset, ex.what())); }
+		catch (const ReplCancel& ex) 			{ WriteLine(std::format("{}Cancelled:{} {}", ansi::cyan, ansi::reset, ex.what())); }
+		catch (const std::runtime_error& ex) 	{ WriteLine(std::format("{}Error:{} {}", ansi::red, ansi::reset, ex.what())); }
+		catch (...) { WriteLine(std::format("Unknown error.", ansi::red, ansi::reset)); }
 	}
 
 	bool ReplContext::Test(const CommandTokens& tokens, bool run) {
@@ -55,22 +56,24 @@ namespace CCRepl {
 				CommandArgs args(*this, cmd, tokens.args, tokens.opts);
 				ok = cmd->Test(*this, args);
 			}
-			else {				
+			else {		
+				Write(ansi::green);		
 				WriteLine(std::format("Command '{}' has no test function: Deemed success.", cmd->Address));
+				Write(ansi::green);
 				ok = true;
 			}
 		}
-		catch (const ReplUserException& ex) { WriteLine(std::format("User error: {}", ex.what())); ok = false; }
-		catch (const ReplException& ex) { WriteLine(std::format("Repl Error: {}", ex.what())); ok = false; }
-		catch (const ReplCancel& ex) { WriteLine(std::format("Cancelled: {}", ex.what())); }
-		catch (const std::runtime_error& ex) { WriteLine(std::format("Error: {}", ex.what())); ok = false; }
-		catch (...) { WriteLine("Unknown error."); ok = false; }
+		catch (const ReplUserException& ex) 	{ WriteLine(std::format("{}User error:{} {}", ansi::red, ansi::reset, ex.what())); ok = false; }
+		catch (const ReplException& ex) 		{ WriteLine(std::format("{}Repl Error:{} {}", ansi::red, ansi::reset, ex.what())); ok = false; }
+		catch (const ReplCancel& ex) 			{ WriteLine(std::format("{}Cancelled:{} {}", ansi::cyan, ansi::reset, ex.what())); }
+		catch (const std::runtime_error& ex) 	{ WriteLine(std::format("{}Error:{} {}", ansi::red, ansi::reset, ex.what())); ok = false; }
+		catch (...) { WriteLine(std::format("Unknown error.", ansi::red, ansi::reset)); ok = false; }
 
 		if (ok) {
-			WriteLine(std::format("[SUCCESS]: '{}'{}.", tokens.commandHead, (run ? ": Running" : "")));
+			WriteLine(std::format("{}[SUCCESS]:{} '{}'{}.", ansi::green, ansi::reset, tokens.commandHead, (run ? ": Running" : "")));
 			if (run) Execute(tokens);
 		}
-		else WriteLine(std::format("[FAILURE]: '{}'{}.", tokens.Print(), (run ? ": Not running" : "")));
+		else WriteLine(std::format("{}[FAILURE]:{} '{}'{}.", ansi::red, ansi::reset, tokens.Print(), (run ? ": Not running" : "")));
 		return ok;
 	}
 
@@ -79,11 +82,11 @@ namespace CCRepl {
 			CommandTokens tk = TokenizeParen(input);
 			return Test(tk, run);
 		}
-		catch (const ReplUserException& ex) { WriteLine(std::format("User error: {}", ex.what())); }
-		catch (const ReplException& ex) { WriteLine(std::format("Repl Error: {}", ex.what())); }
-		catch (const ReplCancel& ex) { WriteLine(std::format("Cancelled: {}", ex.what())); }
-		catch (const std::runtime_error& ex) { WriteLine(std::format("Error: {}", ex.what())); }
-		catch (...) { WriteLine("Unknown error."); }
+		catch (const ReplUserException& ex) 	{ WriteLine(std::format("{}User error:{} {}", ansi::red, ansi::reset, ex.what())); }
+		catch (const ReplException& ex) 		{ WriteLine(std::format("{}Repl Error:{} {}", ansi::red, ansi::reset, ex.what())); }
+		catch (const ReplCancel& ex) 			{ WriteLine(std::format("{}Cancelled:{} {}", ansi::cyan, ansi::reset, ex.what())); }
+		catch (const std::runtime_error& ex) 	{ WriteLine(std::format("{}Error:{} {}", ansi::red, ansi::reset, ex.what())); }
+		catch (...) { WriteLine(std::format("Unknown error.", ansi::red, ansi::reset)); }
 		return false;
 	}
 
@@ -93,7 +96,10 @@ namespace CCRepl {
 
 	void ReplContext::Clear(const std::string& text) const {
 		if (ReqClear) ReqClear(text);
-		else WriteLine("Attempted to clear, but ReqClear not set.");
+		else {
+			Write(ansi::cclear); 
+			WriteLine(text);
+		}
 	}
 
 	std::string ReplContext::ReadLine(const std::string& prompt) {
@@ -126,6 +132,7 @@ namespace CCRepl {
 
 	void ReplContext::SetCaretVis(bool visible) {
 		if (ReqSetCaretVis) ReqSetCaretVis(visible);
+		else Write((visible ? ansi::cshow : ansi::chide));
 	}
 
 	void ReplContext::WriteStatus(std::string text) {

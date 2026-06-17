@@ -137,8 +137,10 @@ namespace str {
     std::string ToString(const double value, std::size_t prec = 1, bool compact = false);
 
     // Time Functions:
-    std::string ToString(const std::tm& time);
-    std::string ToDateString(const std::tm& time);
+    std::string ToString(const std::tm& time, const char* format);
+    std::string ToString(const std::tm& time);      // Format yyyy-mm-dd HH:MM:SS
+    std::string ToDateString(const std::tm& time);  // Format yyyy-mm-dd 
+    std::string ToTimeString(const std::tm& time);  // Format HH:MM:SS
     std::string DayOfWeek(const std::tm& time);
 
     // File things:

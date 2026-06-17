@@ -391,6 +391,119 @@ namespace CCRepl {
 		ctx.WriteLine(tbl.Print());
 	}	
 
+	// some stuff for objtablmacrotests, feel free to delete:
+	// claude wrote this:
+	class ObjEntry {
+	public:
+		// --- String ---
+		std::string name;
+		std::optional<std::string> nameOpt;
+
+		// --- Integers ---
+		int smallInt;
+		int largeInt;
+		std::optional<int> smallIntOpt;
+		std::optional<int> largeIntOpt;
+
+		// --- Doubles ---
+		double smallDouble;
+		double largeDouble;
+		double percentage;   // e.g. 0.0-100.0
+		std::optional<double> smallDoubleOpt;
+		std::optional<double> largeDoubleOpt;
+		std::optional<double> percentageOpt;
+
+		// --- std::tm ---
+		std::tm dateTime{};   // full date & time
+		std::tm dateOnly{};   // date only (time fields unused)
+		std::tm timeOnly{};   // time only (date fields unused)
+		std::optional<std::tm> dateTimeOpt;
+		std::optional<std::tm> dateOnlyOpt;
+		std::optional<std::tm> timeOnlyOpt;
+
+		ObjEntry() = default;
+	};
+
+	// Small helper to build a std::tm from explicit fields.
+	static std::tm makeTm(int year, int month, int day, int hour = 0, int min = 0, int sec = 0) {
+		std::tm t{};
+		t.tm_year = year - 1900;
+		t.tm_mon  = month - 1;
+		t.tm_mday = day;
+		t.tm_hour = hour;
+		t.tm_min  = min;
+		t.tm_sec  = sec;
+		t.tm_isdst = -1;
+		std::mktime(&t); // normalize (weekday, yday, etc.)
+		return t;
+	}
+
+	std::vector<ObjEntry> buildObjEntries() {
+		std::vector<ObjEntry> entries;
+		entries.reserve(10);
+
+		for (int i = 0; i < 10; ++i) {
+			ObjEntry e;
+
+			e.name        = "Entry " + std::to_string(i);
+			e.smallInt    = i;
+			e.largeInt    = i * 1'000'000;
+			e.smallDouble = i * 0.5;
+			e.largeDouble = i * 1.0e9;
+			e.percentage  = i * 10.0; // 0%, 10%, 20%, ...
+
+			e.dateTime = makeTm(2026, 1, i + 1, 9, 30, 0);
+			e.dateOnly = makeTm(2026, 1, i + 1);
+			e.timeOnly = makeTm(1900, 1, 1, i % 24, 0, 0); // date fields irrelevant here
+
+			// Populate the optional fields on every other entry, to show both states.
+			if (i % 2 == 0) {
+				e.nameOpt        = e.name + " (opt)";
+				e.smallIntOpt    = e.smallInt + 1;
+				e.largeIntOpt    = e.largeInt + 1;
+				e.smallDoubleOpt = e.smallDouble + 0.1;
+				e.largeDoubleOpt = e.largeDouble + 1.0;
+				e.percentageOpt  = e.percentage / 2.0;
+				e.dateTimeOpt    = e.dateTime;
+				e.dateOnlyOpt    = e.dateOnly;
+				e.timeOnlyOpt    = e.timeOnly;
+			}
+
+			entries.push_back(e);
+		}
+
+		return entries;
+	}
+
+	CMD_H(ObjTableMacroTests) {
+		// Claude wrote this:
+		std::vector<ObjEntry> rows = buildObjEntries();
+		fmt::ObjTbl<ObjEntry> otbl({
+			FMT_OTCOL_STR(ObjEntry, "Name:", 10, name),
+			FMT_OTCOL_INT(ObjEntry, "SmallInt:", 10, smallInt),
+			FMT_OTCOL_INT_C(ObjEntry, "LargeInt:", 10, largeInt, 2),
+			FMT_OTCOL_DBL(ObjEntry, "SmallDbl:", 10, smallDouble, 2),
+			FMT_OTCOL_DBL_C(ObjEntry, "LargeDbl:", 20, largeDouble, 2),
+			FMT_OTCOL_PCT(ObjEntry, "Percent:", 10, percentage, 2),
+			FMT_OTCOL_DTM(ObjEntry, "DateTime:", 20, dateTime),
+			FMT_OTCOL_DATE(ObjEntry, "DateOnly:", 10, dateOnly),
+			FMT_OTCOL_TIME(ObjEntry, "TimeOnly:", 10, timeOnly),
+			FMT_OTCOL_OPT_STR(ObjEntry, "Name:", 10, nameOpt),
+			FMT_OTCOL_OPT_INT(ObjEntry, "SmallInt:", 10, smallIntOpt),
+			FMT_OTCOL_OPT_INT_C(ObjEntry, "LargeInt:", 10, largeIntOpt, 2),
+			FMT_OTCOL_OPT_DBL(ObjEntry, "SmallDbl:", 10, smallDoubleOpt, 2),
+			FMT_OTCOL_OPT_DBL_C(ObjEntry, "LargeDbl:", 20, largeDoubleOpt, 2),
+			FMT_OTCOL_OPT_PCT(ObjEntry, "Percent:", 10, percentageOpt, 2),
+			FMT_OTCOL_OPT_DTM(ObjEntry, "DateTime:", 20, dateTimeOpt),
+			FMT_OTCOL_OPT_DATE(ObjEntry, "DateOnly:", 10, dateOnlyOpt),
+			FMT_OTCOL_OPT_TIME(ObjEntry, "TimeOnly:", 10, timeOnlyOpt),
+		});
+		otbl << rows;
+		ctx << otbl.Print() << '\n';
+		//otbl.OrderBy(0);
+		ctx << otbl.Print(fmt::TblRenderType::BoxCompact, 17, false) << '\n';
+	}
+
 	CMD_H(TestPrsTime) {
 
 		std::optional<std::tm> testTime = args.Get<std::tm>(0);
@@ -594,7 +707,14 @@ namespace CCRepl {
 				.Exec(TextTableMultiline),
 
 				Cmd("ObjTbl")
-				.Exec(ObjTableTests),
+				.Exec(ObjTableTests)
+				.Children(
+
+					Cmd("Macro")
+					.Aliases("macros", "macrotest")
+					.Exec(ObjTableMacroTests)
+
+				),
 
 				Cmd("PrsTime")
 				.Exec(TestPrsTime)

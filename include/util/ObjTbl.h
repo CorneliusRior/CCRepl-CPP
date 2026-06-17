@@ -1,10 +1,18 @@
 #pragma once
 #include <util/str.h>
 #include <util/fmt.h>
+#include <util/parsers.h>
 #include <ranges>
 
 #define FMT_OTCOL_ORDER_DEF(varname) [](const auto* a, const auto* b) { return a->varname < b->varname; }
 #define FMT_OTCOL_ORDER_ENUM(varname) [](const auto* a, const auto* b) { return static_cast<int>(a->varname) < static_cast<int>(b->varname); }
+#define FMT_OTCOL_ORDER_OPT(varname) [](const auto* a, const auto* b) {     \
+    if (a->varname && b->varname) return *a->varname < *b->varname;         \
+    if (!a->varname && !b->varname) return false;                           \
+    return b->varname.has_value();                                          \
+}
+
+// -- Object Table Column Macros: --
 
 // String named varname in ObjType, e.g.: FMT_OTCOL_STR(Item, "Name:", 20, name).
 #define FMT_OTCOL_STR(ObjType, header, width, varname) fmt::ObjTblCol<ObjType>(header, width, \
@@ -36,6 +44,65 @@
     [](const ObjType* itm) { return str::AsPct(itm->varname, prec); }, \
     FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
 
+// Date/time, custom formatting, e.g. "%Y/%m/%d %H:%M:%S".
+#define FMT_OTCOL_TM(ObjType, header, width, varname, format) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return str::ToString(itm->varname, format); }, \
+    FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Left)
+
+// Date/time, formatted as yyyy-mm-dd HH:MM:SS.
+#define FMT_OTCOL_DTM(ObjType, header, width, varname) FMT_OTCOL_TM(ObjType, header, width, varname, "%Y-%m-%d %H:%M:%S")
+// Date, formatted as yyyy-mm-dd.
+#define FMT_OTCOL_DATE(ObjType, header, width, varname) FMT_OTCOL_TM(ObjType, header, width, varname, "%Y-%m-%d")
+// Time, formtted as HH:MM:SS.
+#define FMT_OTCOL_TIME(ObjType, header, width, varname) FMT_OTCOL_TM(ObjType, header, width, varname, "%H:%M:%S")
+
+// -- Optional parameters: --
+
+// std::optional<std::string> named varname in ObjType
+#define FMT_OTCOL_OPT_STR(ObjType, header, width, varname) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return itm->varname.value_or("-"); }, \
+    FMT_OTCOL_ORDER_OPT(varname), fmt::TextAlign::Left, fmt::TextAlign::Left)
+
+// std::optional<int> named varname in ObjType
+#define FMT_OTCOL_OPT_INT(ObjType, header, width, varname) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return itm->varname ? std::to_string(*itm->varname) : "-" ; }, \
+    FMT_OTCOL_ORDER_OPT(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+
+// std::optional<int> named varname in ObjType
+#define FMT_OTCOL_OPT_INT_C(ObjType, header, width, varname, prec) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return itm->varname ? str::ToString(*itm->varname, prec, true) : "-" ; }, \
+    FMT_OTCOL_ORDER_OPT(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// std::optional<double> named varname in ObjType
+#define FMT_OTCOL_OPT_DBL(ObjType, header, width, varname, prec) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return itm->varname ? str::ToString(*itm->varname, prec, false) : "-" ; }, \
+    FMT_OTCOL_ORDER_OPT(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// std::optional<double> named varname in ObjType
+#define FMT_OTCOL_OPT_DBL_C(ObjType, header, width, varname, prec) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return itm->varname ? str::ToString(*itm->varname, prec, true) : "-" ; }, \
+    FMT_OTCOL_ORDER_OPT(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// std::optional<double> named varname in ObjType: render as percentage.
+#define FMT_OTCOL_OPT_PCT(ObjType, header, width, varname, prec) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return itm->varname ? str::AsPct(*itm->varname, prec) : "-%" ; }, \
+    FMT_OTCOL_ORDER_OPT(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// std::optional<std::tm> named varname in ObjType with given format, e.g. "%Y-%m-%d %H:%M:%D"
+#define FMT_OTCOL_OPT_TM(ObjType, header, width, varname, format) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { if (itm->varname) return str::ToString(*itm->varname, format); return std::string("-"); }, \
+    FMT_OTCOL_ORDER_OPT(varname), fmt::TextAlign::Left, fmt::TextAlign::Left)
+
+// std::optional<std::tm> named varname in ObjType, formatted as yyyy-mm-dd HH:MM:SS
+#define FMT_OTCOL_OPT_DTM(ObjType, header, width, varname) FMT_OTCOL_OPT_TM(ObjType, header, width, varname, "%Y-%m-%d %H:%M:%S")
+// std::optional<std::tm> named varname in ObjType, formatted as yyyy-mm-dd
+#define FMT_OTCOL_OPT_DATE(ObjType, header, width, varname) FMT_OTCOL_OPT_TM(ObjType, header, width, varname, "%Y-%m-%d")
+// std::optional<std::tm> named varname in ObjType, formatted as HH:MM:SS
+#define FMT_OTCOL_OPT_TIME(ObjType, header, width, varname) FMT_OTCOL_OPT_TM(ObjType, header, width, varname, "%H:%M:%S")
+
+// -- Member functions: --
+
 // String named varname in ObjType, calls member function (ObjTbl::AddColumn)
 #define FMT_OTCOL_STR_M(header, width, varname) AddColumn(header, width, \
     [](const auto* itm) { return itm->varname; }, \
@@ -65,6 +132,16 @@
 #define FMT_OTCOL_PCT_M(header, width, varname, prec) AddColumn(header, width, \
     [](const auto* itm) { return str::AsPct(itm->varname, prec); }, \
     FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
+
+// Outside namespace:
+std::strong_ordering operator<=>(const std::tm& a, const std::tm& b) {
+    if (auto c = (a.tm_year <=> b.tm_year); c != 0) return c;
+    if (auto c = (a.tm_mon  <=> b.tm_mon);  c != 0) return c;
+    if (auto c = (a.tm_mday <=> b.tm_mday); c != 0) return c;
+    if (auto c = (a.tm_hour <=> b.tm_hour); c != 0) return c;
+    if (auto c = (a.tm_min  <=> b.tm_min);  c != 0) return c;
+    return a.tm_sec <=> b.tm_sec;
+}
 
 namespace fmt {    
 
@@ -280,7 +357,7 @@ namespace fmt {
 
             // Draw headers:
             for (std::size_t i = 0; i < columns_.size(); i++) 
-                    oss << cellSep << AlignText(i == orderBy ? orderStr + columns_[i].Header : columns_[i].Header, columns_[i].HeaderAlignment, columns_[i].Width, truncStr);                
+                    oss << cellSep << (i == orderBy ? "\033[1m" : "") << AlignText(i == orderBy ? orderStr + columns_[i].Header : columns_[i].Header, columns_[i].HeaderAlignment, columns_[i].Width, truncStr) << "\033[0m";
                 oss << cellSep;
 
             // Draw header bottom if applicable:
@@ -361,4 +438,5 @@ namespace fmt {
         ObjTbl uses pointers to existing objects, please declare them outside.*/
         ObjTbl& AddRows(std::vector<Obj>&& rows) = delete;
     };
+    
 }

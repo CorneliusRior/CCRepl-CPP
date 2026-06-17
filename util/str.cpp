@@ -493,19 +493,23 @@ namespace str {
 		return oss.str();
 	}
 
-	// ToString Functions:
-	std::string ToString(const std::tm& time) {
+	std::string ToString(const std::tm& time, const char* format) {
 		std::tm t = time;
 		std::ostringstream oss;
-		oss << std::put_time(&t, "%Y-%m-%d %H:%M:%S");
+		oss << std::put_time(&t, format);
 		return oss.str();
+	}
+	
+	std::string ToString(const std::tm& time) {
+		return ToString(time, "%Y-%m-%d %H:%M:%S");
 	}
 
 	std::string ToDateString(const std::tm& time) {
-		std::tm t = time;
-		std::ostringstream oss;
-		oss << std::put_time(&t, "%Y-%m-%d");
-		return oss.str();
+		return ToString(time, "%Y-%m-%d");
+	}	
+
+	std::string ToTimeString(const std::tm& time) {
+		return ToString(time, "%H:%M:%S");
 	}
 
 	std::string DayOfWeek(const std::tm& time) {
