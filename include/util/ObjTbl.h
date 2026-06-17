@@ -134,7 +134,7 @@
     FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
 
 // Outside namespace:
-std::strong_ordering operator<=>(const std::tm& a, const std::tm& b) {
+inline std::strong_ordering operator<=>(const std::tm& a, const std::tm& b) {
     if (auto c = (a.tm_year <=> b.tm_year); c != 0) return c;
     if (auto c = (a.tm_mon  <=> b.tm_mon);  c != 0) return c;
     if (auto c = (a.tm_mday <=> b.tm_mday); c != 0) return c;
