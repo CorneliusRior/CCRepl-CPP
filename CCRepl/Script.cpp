@@ -88,9 +88,9 @@ namespace CCRepl {
 					if (stmt.Args.Cmd->Test(ctx, stmt.Args)) { SCP_PRS_UPD(std::format("[SUCCESS] ('{}').", stmt.Args.CommandAddress)); }
 					else SCP_PRS_ERR("Test function returned false.")
 				}
-				catch (const ReplUserException& ex) { SCP_PRS_ERR(std::format("User error: {}", ex.what())) }
-				catch (const ReplException& ex) { SCP_PRS_ERR(std::format("Repl error: {}", ex.what())) }
-				catch (const std::runtime_error& ex) { SCP_PRS_ERR(std::format("Error: {}", ex.what())) }
+				catch (const ReplUserException& ex) { SCP_PRS_ERR(std::format("\033[31User error:\033[1m {}", ex.what())) }
+				catch (const ReplException& ex) { SCP_PRS_ERR(std::format("\033[31Repl error:\033[1m {}", ex.what())) }
+				catch (const std::runtime_error& ex) { SCP_PRS_ERR(std::format("\033[31Error:\033[1m {}", ex.what())) }
 				catch (...) { SCP_PRS_ERR(std::format("Unknown Error.")) }
 			}
 			else SCP_PRS_UPD(std::format("Method '{}' has no test function: Deemed Success.", stmt.Args.CommandAddress));			

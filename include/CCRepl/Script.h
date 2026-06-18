@@ -14,7 +14,7 @@
 
 #define SCP_PRS_ERR(msg) \
 	{ \
-	errs.push_back(std::format("({}/{}): {}", stmt.stmtIndex, Statements.size(), msg)); \
+	errs.push_back(std::format("\033[2m({}/{}):\033[0m {}", stmt.stmtIndex, Statements.size(), msg)); \
 	if (!silent) ctx.WriteLine(std::format("({}/{}) [FAILURE] ('{}'): {}", stmt.stmtIndex, Statements.size(), stmt.Args.CommandAddress, msg)); \
 	} 
 
