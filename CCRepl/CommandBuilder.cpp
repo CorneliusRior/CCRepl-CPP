@@ -3,6 +3,10 @@
 
 namespace CCRepl {
 
+	CmdArg<bool> BolArg(std::string name, ArgMode mode, std::optional<bool> fallback, std::string prompt, std::string retryPrompt, std::vector<std::string> cancelStrings) {
+		return CmdArg<bool>(name, parsers::TryBool, mode, fallback, prompt, retryPrompt, cancelStrings);
+	}
+
 	CmdArg<int> IntArg(std::string name, ArgMode mode, std::optional<int> fallback, std::string prompt, std::string retryPrompt, std::vector<std::string> cancelStrings) {
 		return CmdArg<int>(name, parsers::TryInt, mode, fallback, prompt, retryPrompt, cancelStrings);
 	}

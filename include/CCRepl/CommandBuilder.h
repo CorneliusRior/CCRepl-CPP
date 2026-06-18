@@ -36,6 +36,7 @@ namespace CCRepl {
 
 	// Some commands for specific data types:
 
+	CmdArg<bool> BolArg(std::string name, ArgMode mode = ArgMode::Required, std::optional<bool> fallback = std::nullopt, std::string prompt = "", std::string retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" });
 	CmdArg<int> IntArg(std::string name, ArgMode mode = ArgMode::Required, std::optional<int> fallback = std::nullopt, std::string prompt = "", std::string retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" });
 	CmdArg<double> DblArg(std::string name, ArgMode mode = ArgMode::Required, std::optional<double> fallback = std::nullopt, std::string prompt = "", std::string retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" });
 	CmdArg<std::size_t> SztArg(std::string name, ArgMode mode = ArgMode::Required, std::optional<std::size_t> fallback = std::nullopt, std::string prompt = "", std::string retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" });
