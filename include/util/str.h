@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <Windows.h> // delete after
+#include <util/ansi.h>
 
 #define DB(msg) str::db(msg)
 
