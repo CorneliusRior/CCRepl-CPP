@@ -212,7 +212,7 @@ namespace str {
     template<typename... Args>
     void PrintArgs(const std::string& location, const Args&... args) {
         std::ostringstream oss;
-        oss << location;
+        oss << ansi::dim << location << ansi::reset;
         bool first = true;
         ((oss << (first ? "" : ", ") << args, first = false), ...);
         str::p(oss.str());
