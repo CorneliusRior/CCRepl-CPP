@@ -71,7 +71,7 @@ namespace CCRepl {
 					});
 			}
 			catch (const ReplUserException& ex) {
-				std::string errmsg = std::format("\033[2m({}/{})\033[0;33m '{}'\033[0;2m User error:\033[0m {}\n\033[2m{}\n\033[0m", tokens[i].stmtIndex, tokens.size() - 1, tokens[i].tokens.commandHead, ex.what(), tokens[i].Print_ML());
+				std::string errmsg = std::format("\033[2m({}/{})\033[0;33m '{}'\033[0;31m User error:\033[0m {}\n\033[2m{}\n\033[0m", tokens[i].stmtIndex, tokens.size() - 1, tokens[i].tokens.commandHead, ex.what(), tokens[i].Print_ML());
 				errs.push_back(errmsg);
 				ctx.WriteLine(errmsg);
 			}
