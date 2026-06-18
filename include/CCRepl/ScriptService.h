@@ -48,6 +48,7 @@ namespace CCRepl {
 		bool RenameScript(const std::string& oldName, const std::string& newName);
 		std::string ListScripts(const std::string& sk) const;
 		std::string PrintScript(const std::string& name) const;
+		std::string PrintScriptFull(const std::string& name) const;
 		std::vector<std::string> ScriptNames() const;
 		Script& GetScript(const std::string& name);
 		const Script& GetScript(const std::string& name) const;

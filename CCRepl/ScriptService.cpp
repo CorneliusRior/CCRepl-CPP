@@ -119,6 +119,10 @@ namespace CCRepl {
 	std::string ScriptService::PrintScript(const std::string& name) const {
 		return GetScript(name).Print();
 	}
+
+	std::string ScriptService::PrintScriptFull(const std::string& name) const {
+		return GetScript(name).PrintFull();
+	}
 	
 	std::vector<std::string> ScriptService::ScriptNames() const {
 		std::vector<std::string> r; 

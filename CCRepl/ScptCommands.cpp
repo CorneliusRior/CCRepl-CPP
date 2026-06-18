@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <CCRepl/ScptCommands.h>
+#include <util/ansi.h>
 
 namespace CCRepl {
 
@@ -104,6 +105,15 @@ namespace CCRepl {
 				.Exec(ScpSvcPrint)
 				.Args(StrArg("ScriptName", ArgMode::RequiredPrompt))
 				.Desc("Prints info on a loaded script.")
+				.Children(
+
+					Cmd("Full")
+					.Aliases("all", "f", "a", "*")
+					.Exec(ScpSvcPrintFull)
+					.Args(StrArg("ScriptName", ArgMode::RequiredPrompt))
+					.Desc("Prints full info on a loaded script, including each statement.")
+
+				)
 
 			)
 
@@ -156,8 +166,8 @@ namespace CCRepl {
 		case 3: {
 			std::string scpName = args.GetR<std::string>(0);
 			if (svc->HasScript(scpName)) {
-				if (args.HasOptStart("-f") || ctx.Confirm(std::format("Delete script '{}'? (Y/N): ", scpName))) {
-					if (svc->Unload(scpName)) if (!args.HasOptStart("-q")) ctx.WriteLine(std::format("Deleted script '{}'", scpName));
+				if (args.HasOptStart("-f") || ctx.Confirm(std::format("Delete script '{}'? \033[1m(Y/N)\033[0m: ", scpName))) {
+					if (svc->Unload(scpName) && !args.HasOptStart("-q")) ctx.WriteLine(std::format("Deleted script '{}'", scpName));
 					else throw ReplException("No script deleted.");
 				}
 				else ctx.WriteLine("Cancelled.");
@@ -170,12 +180,12 @@ namespace CCRepl {
 		case 4: {
 			if (args.HasOptStart("-s")) {
 				for (std::string scp : svc->ScriptNames()) {
-					if (ctx.Confirm(std::format("Unload script '{}'? (Y/N): ", scp))) svc->Unload(scp);
+					if (ctx.Confirm(std::format("Unload script '{}'? \033[1m(Y/N)\033[0m: ", scp))) svc->Unload(scp);
 				}
 				if (!args.HasOptStart("-q")) ctx.WriteLine(svc->ListScripts(""));
 			}
 			else {
-				if (args.HasOptStart("-f") || ctx.Confirm("Delete all scripts? (Y/N): ")) svc->UnloadAll();
+				if (args.HasOptStart("-f") || ctx.Confirm("Delete all scripts? \033[1m(Y/N)\033[0m: ")) svc->UnloadAll();
 				else ctx.WriteLine("Cancelled.");
 			}
 			break;
@@ -218,6 +228,10 @@ namespace CCRepl {
 
 	CMD_H(ScpSvcPrint) {
 		ctx.WriteLine(CCSS_GET_SVC()->PrintScript(args.GetR<std::string>(0)));
+	}
+
+	CMD_H(ScpSvcPrintFull) {
+		ctx << ansi::reset << CCSS_GET_SVC()->PrintScriptFull(args.GetR<std::string>(0)) << ansi::reset << '\n';
 	}
 
 }

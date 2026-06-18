@@ -2,6 +2,7 @@
 #include <CCRepl/ReplContext.h>
 #include <CCRepl/script.h>
 #include <util/fmt.h>
+#include <util/ansi.h>
 
 namespace CCRepl {
 
@@ -52,10 +53,10 @@ namespace CCRepl {
 
 	std::string ScriptMetaData::Print() const {
 		std::ostringstream oss;
-		oss << "Format: " << Format << '\n';
-		oss << "Script Name: " << Name << '\n';
-		oss << "Author: " << Author << '\n';
-		oss << "Created: " << str::ToDateString(Created) << '\n';
+		oss << "\033[36;4mFormat:\033[0m " << Format << '\n';
+		oss << "\033[36;4mScript Name:\033[0m " << Name << '\n';
+		oss << "\033[36;4mAuthor:\033[0m " << Author << '\n';
+		oss << "\033[36;4mCreated:\033[0m " << str::ToDateString(Created) << '\n';
 		return oss.str();
 	}	
 
@@ -130,6 +131,20 @@ namespace CCRepl {
 		std::ostringstream oss;
 		oss << '\n' << MetaData.Print();
 		return fmt::TxtBoxLeft(oss.str(), title);
+	}
+
+	std::string Script::PrintFull() const {
+		std::ostringstream oss;
+		oss << "\033[1;4m" << MetaData.Name << ":\n\n" << ansi::reset
+			<< "\033[2mMetaData:\033[0m\n"
+			<< MetaData.Print() << "\n"
+			<< "\033[2mStatements:\033[0m\n";
+		for (const ScriptStatement& stmt : Statements) {
+			oss << stmt.stmtIndex << " \033[2m(line " << stmt.startLine << "): \033[0;33m"
+				<< stmt.Args.CommandAddress << ansi::reset << " (" << stmt.Args.Args.size() << " arguments);\n";
+		}
+		oss << "\n\033[2m-- end of script --\033[0m";
+		return oss.str();
 	}
 	
 	std::vector<fmt::TextTableColumn> Script::GetTableColumns() {

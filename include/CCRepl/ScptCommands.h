@@ -13,5 +13,6 @@ namespace CCRepl {
 	CMD_H(ScpSvcData);
 	CMD_H(ScpSvcRun);
 	CMD_H(ScpSvcPrint);
+	CMD_H(ScpSvcPrintFull);
 
 }

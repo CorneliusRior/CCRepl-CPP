@@ -83,6 +83,7 @@ namespace CCRepl {
 		bool Test(ReplContext& ctx, bool silent = false);
 		void Execute(ReplContext& ctx);
 		std::string Print(const std::string& title = "Script Info") const;
+		std::string PrintFull() const;	// Shows all statements.
 
 		static std::vector<fmt::TextTableColumn> GetTableColumns();
 		std::vector<std::string> GetTableRow() const;
