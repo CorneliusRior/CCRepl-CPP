@@ -19,6 +19,11 @@
     [](const ObjType* itm) { return itm->varname; }, \
     FMT_OTCOL_ORDER_DEF(varname), fmt::TextAlign::Left, fmt::TextAlign::Left)
 
+#define FMT_OTCOL_BOOL(ObjType, header, width, varname, tstr, fstr) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { return itm->varname ? tstr : fstr; }, \
+    [](const ObjType* a, const ObjType* b) { return !a->varname && b->varname; }, \
+    fmt::TextAlign::Left, fmt::TextAlign::Center)
+
 // Int named varname in ObjType. For compact, use FMT_OTCOL_INT_C.
 #define FMT_OTCOL_INT(ObjType, header, width, varname) fmt::ObjTblCol<ObjType>(header, width, \
     [](const ObjType* itm) { return std::to_string(itm->varname); }, \
@@ -63,11 +68,16 @@
     [](const ObjType* itm) { return itm->varname.value_or("-"); }, \
     FMT_OTCOL_ORDER_OPT(varname), fmt::TextAlign::Left, fmt::TextAlign::Left)
 
+#define FMT_OTCOL_OPT_BOOL(ObjType, header, width, varname, tstr, fstr) fmt::ObjTblCol<ObjType>(header, width, \
+    [](const ObjType* itm) { if (itm->varname.has_value()) return itm->varname.value() ? tstr : fstr; else return "-"; }, \
+    [](const ObjType* a, const ObjType* b) { if (a->varname.has_value() && b->varname.has_value()) return !a->varname.value() && b->varname.value(); \
+    else if (!a->varname.has_value() && !b->varname.has_value()) return false; else return !a->varname.has_value() && b->varname.has_value(); }, \
+    fmt::TextAlign::Left, fmt::TextAlign::Center)
+
 // std::optional<int> named varname in ObjType
 #define FMT_OTCOL_OPT_INT(ObjType, header, width, varname) fmt::ObjTblCol<ObjType>(header, width, \
     [](const ObjType* itm) { return itm->varname ? std::to_string(*itm->varname) : "-" ; }, \
     FMT_OTCOL_ORDER_OPT(varname), fmt::TextAlign::Left, fmt::TextAlign::Right)
-
 
 // std::optional<int> named varname in ObjType
 #define FMT_OTCOL_OPT_INT_C(ObjType, header, width, varname, prec) fmt::ObjTblCol<ObjType>(header, width, \

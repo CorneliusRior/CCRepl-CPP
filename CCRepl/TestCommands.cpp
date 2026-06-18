@@ -399,6 +399,10 @@ namespace CCRepl {
 		std::string name;
 		std::optional<std::string> nameOpt;
 
+		// --- Bools --- (this is my own addition)
+		bool boolVar;
+		std::optional<bool> boolVarOpt;
+
 		// --- Integers ---
 		int smallInt;
 		int largeInt;
@@ -446,6 +450,7 @@ namespace CCRepl {
 			ObjEntry e;
 
 			e.name        = "Entry " + std::to_string(i);
+			e.boolVar	  = i % 3 == 1;
 			e.smallInt    = i;
 			e.largeInt    = i * 1'000'000;
 			e.smallDouble = i * 0.5;
@@ -459,6 +464,7 @@ namespace CCRepl {
 			// Populate the optional fields on every other entry, to show both states.
 			if (i % 2 == 0) {
 				e.nameOpt        = e.name + " (opt)";
+				e.boolVarOpt	 = e.boolVar;
 				e.smallIntOpt    = e.smallInt + 1;
 				e.largeIntOpt    = e.largeInt + 1;
 				e.smallDoubleOpt = e.smallDouble + 0.1;
@@ -480,6 +486,7 @@ namespace CCRepl {
 		std::vector<ObjEntry> rows = buildObjEntries();
 		fmt::ObjTbl<ObjEntry> otbl({
 			FMT_OTCOL_STR(ObjEntry, "Name:", 10, name),
+			FMT_OTCOL_BOOL(ObjEntry, "BoolVar:", 10, boolVar, "[x]", "[ ]"),
 			FMT_OTCOL_INT(ObjEntry, "SmallInt:", 10, smallInt),
 			FMT_OTCOL_INT_C(ObjEntry, "LargeInt:", 10, largeInt, 2),
 			FMT_OTCOL_DBL(ObjEntry, "SmallDbl:", 10, smallDouble, 2),
@@ -489,6 +496,7 @@ namespace CCRepl {
 			FMT_OTCOL_DATE(ObjEntry, "DateOnly:", 10, dateOnly),
 			FMT_OTCOL_TIME(ObjEntry, "TimeOnly:", 10, timeOnly),
 			FMT_OTCOL_OPT_STR(ObjEntry, "Name:", 10, nameOpt),
+			FMT_OTCOL_OPT_BOOL(ObjEntry, "BoolVar:", 10, boolVarOpt, "[x]", "[ ]"),			
 			FMT_OTCOL_OPT_INT(ObjEntry, "SmallInt:", 10, smallIntOpt),
 			FMT_OTCOL_OPT_INT_C(ObjEntry, "LargeInt:", 10, largeIntOpt, 2),
 			FMT_OTCOL_OPT_DBL(ObjEntry, "SmallDbl:", 10, smallDoubleOpt, 2),
@@ -500,8 +508,9 @@ namespace CCRepl {
 		});
 		otbl << rows;
 		ctx << otbl.Print() << '\n';
-		//otbl.OrderBy(0);
-		ctx << otbl.Print(fmt::TblRenderType::BoxCompact, 17, false) << '\n';
+		ctx << otbl.Print(fmt::TblRenderType::BoxCompact, 1, false) << '\n';
+		otbl.OrderBy(0);
+		ctx << otbl.Print(fmt::TblRenderType::BoxCompact, 11) << '\n';
 	}
 
 	CMD_H(TestPrsTime) {
