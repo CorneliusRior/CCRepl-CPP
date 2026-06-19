@@ -156,7 +156,7 @@ namespace parsers {
 		catch (const ParseException&) { return false; }
 	}
 
-	bool TryDate(int num, std::tm& v) {
+	bool TryIntDate(int num, std::tm& v) {
 		try {
 			v = PrsDate(num);
 			return true;

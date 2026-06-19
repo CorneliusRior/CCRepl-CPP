@@ -116,6 +116,36 @@ namespace CCRepl {
 		template <typename T>
 		std::shared_ptr<T> GetService() { return std::static_pointer_cast<T>(serviceMap_.at(typeid(T))); }
 
+		// Request input: For when you want input inside of the command.
+		template<typename T>
+		T RequireInput(std::function<bool(const std::string&, T&)> parser, const std::string& prompt = "", const std::string& retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" }) {
+			while (true) {
+				std::string input = ReadLine(prompt);
+				if (str::InVector(input, cancelStrings)) throw ReplCancel(std::format("'{}' in cancel strings.", input));
+				T value{};
+				if (parser(input, value)) return value;
+				WriteLine(retryPrompt);
+			}
+		}
+
+		template<typename T>
+		T RequestInput(std::function<bool(const std::string&, T&)> parser, T fallback, const std::string& prompt = "", const std::string& retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" }) {
+			try { return RequireInput(parser, prompt, retryPrompt, cancelStrings); }
+			catch (const ReplCancel&) { return fallback; }
+		}
+
+		template<typename T>
+		// Returns std::optional<T>. To get actual value, please use RequireInput<T> or RequestInput<T>
+		std::optional<T> RequestInput(std::function<bool(const std::string&, T&)> parser, const std::string& prompt = "", const std::string& retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" }) {
+			while (true) {
+				std::string input = ReadLine(prompt);
+				if (str::InVector(input, cancelStrings)) return std::nullopt;
+				T value{};
+				if (parser(input, value)) return value;
+				WriteLine(retryPrompt);
+			}
+		}
+
 		// Waiting:
 		template<typename T>
 		T WaitSpinner(std::future<T> ft, const std::string& message = "Processing", const std::string& doneMessage = "Done.") {

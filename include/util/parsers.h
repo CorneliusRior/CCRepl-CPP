@@ -31,7 +31,7 @@ namespace parsers {
 	bool TryBool(const std::string& text, bool& v);
 	bool TryTime(const std::string& text, std::tm& v);
 	bool TryDate(const std::string& text, std::tm& v);
-	bool TryDate(int num, std::tm& v);
+	bool TryIntDate(int num, std::tm& v);
 
 	int ToIntDate(const std::tm& date);	// Returns int which is YYYYMMDD, can be parsed w/ PrsDate(int)
 	void ValidateTime(const std::tm& t);	// Throws if invalid. 

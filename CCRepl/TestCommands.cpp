@@ -622,7 +622,7 @@ namespace CCRepl {
 		for (const int& nt : TryDateInts) {
 			ctx << "'" << nt << "':";
 			std::tm t{};
-			if (parsers::TryDate(nt, t))
+			if (parsers::TryIntDate(nt, t))
 				ctx << " [x]\n" << std::put_time(&t, "%Y-%m-%d");
 			else ctx << " [ ]";
 			ctx << "\n\n";			
@@ -642,6 +642,56 @@ namespace CCRepl {
 			ctx << std::put_time(&date, "%Y-%m-%d") << '\n'
 				<< parsers::ToIntDate(date) << '\n';
 		}
+	}
+
+	CMD_H(ReqInput) {
+
+		// Test 1: RequireInput with int, normal flow
+		ctx << "Test 1: RequireInput<int> (try entering a non-int first, then an int)\n";
+		int i1 = ctx.RequireInput<int>(parsers::TryInt, "Enter an int: ", "Not a valid int, try again: ");
+		ctx << "Got: " << i1 << "\n\n";
+
+		// Test 2: RequireInput with cancel string
+		ctx << "Test 2: RequireInput<int> (type \\ to cancel, should throw)\n";
+		try {
+			int i2 = ctx.RequireInput<int>(parsers::TryInt, "Enter an int or \\ to cancel: ", "Not valid: ");
+			ctx << "Got: " << i2 << "\n\n";
+		} catch (const ReplCancel& e) {
+			ctx << "Caught ReplCancel as expected: " << e.what() << "\n\n";
+		}
+
+		// Test 3: RequestInput with fallback, cancel string used
+		ctx << "Test 3: RequestInput<int> w/ fallback=42 (type \\ to cancel)\n";
+		int i3 = ctx.RequestInput<int>(parsers::TryInt, 42, "Enter an int or \\ to cancel: ", "Not valid: ");
+		ctx << "Got: " << i3 << " (should be 42 if cancelled)\n\n";
+
+		// Test 4: RequestInput with fallback, normal value entered
+		ctx << "Test 4: RequestInput<int> w/ fallback=42 (enter a real int)\n";
+		int i4 = ctx.RequestInput<int>(parsers::TryInt, 42, "Enter an int: ", "Not valid: ");
+		ctx << "Got: " << i4 << "\n\n";
+
+		// Test 5: RequestInput returning optional, cancel string used
+		ctx << "Test 5: RequestInput<int> optional overload (type \\ to cancel)\n";
+		std::optional<int> i5 = ctx.RequestInput<int>(parsers::TryInt, "Enter an int or \\ to cancel: ", "Not valid: ");
+		ctx << "Got: " << (i5.has_value() ? std::to_string(*i5) : "nullopt") << " (should be nullopt if cancelled)\n\n";
+
+		// Test 6: RequestInput returning optional, value entered
+		ctx << "Test 6: RequestInput<int> optional overload (enter a real int)\n";
+		std::optional<int> i6 = ctx.RequestInput<int>(parsers::TryInt, "Enter an int: ", "Not valid: ");
+		ctx << "Got: " << (i6.has_value() ? std::to_string(*i6) : "nullopt") << "\n\n";
+
+		// Test 7: with std::tm via TryDate
+		ctx << "Test 7: RequireInput<std::tm> via TryDate (enter e.g. 2024-01-01)\n";
+		std::tm d1 = ctx.RequireInput<std::tm>(static_cast<bool(*)(const std::string&, std::tm&)>(parsers::TryDate), "Enter a date (YYYYMMDD): ", "Invalid date: ");
+		ctx << "Got date with year: " << (d1.tm_year + 1900) << "\n\n";
+
+		// Test 8: with std::string via TryString
+		ctx << "Test 8: RequireInput<std::string> via TryString\n";
+		std::string s1 = ctx.RequireInput<std::string>(parsers::TryString, "Enter any text: ", "Invalid: ");
+		ctx << "Got: " << s1 << "\n\n";
+
+		ctx << "All tests complete.\n";
+
 	}
 
 	TestCommands::TestCommands() {
@@ -727,7 +777,10 @@ namespace CCRepl {
 
 				Cmd("PrsTime")
 				.Exec(TestPrsTime)
-				.Args(DatArg("DateTest", ArgMode::Optional))
+				.Args(DatArg("DateTest", ArgMode::Optional)),
+
+				Cmd("ReqInput")
+				.Exec(ReqInput)
 
 			)
 
