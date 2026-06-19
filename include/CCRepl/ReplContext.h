@@ -136,7 +136,7 @@ namespace CCRepl {
 
 		template<typename T>
 		// Returns std::optional<T>. To get actual value, please use RequireInput<T> or RequestInput<T>
-		std::optional<T> RequestInput(std::function<bool(const std::string&, T&)> parser, const std::string& prompt = "", const std::string& retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" }) {
+		std::optional<T> RequestOptInput(std::function<bool(const std::string&, T&)> parser, const std::string& prompt = "", const std::string& retryPrompt = "", std::vector<std::string> cancelStrings = { "\\" }) {
 			while (true) {
 				std::string input = ReadLine(prompt);
 				if (str::InVector(input, cancelStrings)) return std::nullopt;
