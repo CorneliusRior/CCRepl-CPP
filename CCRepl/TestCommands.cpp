@@ -672,12 +672,12 @@ namespace CCRepl {
 
 		// Test 5: RequestInput returning optional, cancel string used
 		ctx << "Test 5: RequestInput<int> optional overload (type \\ to cancel)\n";
-		std::optional<int> i5 = ctx.RequestInput<int>(parsers::TryInt, "Enter an int or \\ to cancel: ", "Not valid: ");
+		std::optional<int> i5 = ctx.RequestOptInput<int>(parsers::TryInt, "Enter an int or \\ to cancel: ", "Not valid: ");
 		ctx << "Got: " << (i5.has_value() ? std::to_string(*i5) : "nullopt") << " (should be nullopt if cancelled)\n\n";
 
 		// Test 6: RequestInput returning optional, value entered
 		ctx << "Test 6: RequestInput<int> optional overload (enter a real int)\n";
-		std::optional<int> i6 = ctx.RequestInput<int>(parsers::TryInt, "Enter an int: ", "Not valid: ");
+		std::optional<int> i6 = ctx.RequestOptInput<int>(parsers::TryInt, "Enter an int: ", "Not valid: ");
 		ctx << "Got: " << (i6.has_value() ? std::to_string(*i6) : "nullopt") << "\n\n";
 
 		// Test 7: with std::tm via TryDate
