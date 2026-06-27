@@ -97,6 +97,11 @@ namespace CCRepl {
 	// Create a list of tokens to be converted into a script later:
 	std::vector<ScriptToken> TokenizeScript(const std::string& text);
 
+	std::vector<ScriptToken> TokenizeScriptV2(const std::string& text);
+
+	// Expands all macors in a script to be tokenized.
+	std::string ExpandMacros(const std::string& text);
+
 	// Some helpers for script:
 	/* Iterates through until it finds a character, returns everything in between. 
 	Returns string if it hits the end of the text, does not consume. Includes text[i].
@@ -106,9 +111,13 @@ namespace CCRepl {
 	StringUntil(text, i, ']', true) = "[DEF]";
 	i == 8;
 	*/
-	static std::string StringUntil(const std::string& text, std::size_t& i, char c, bool includeLast);
+	std::string StringUntil(const std::string& text, std::size_t& i, char c, bool includeLast);
 
-	static std::string StringUntil(const std::string& text, std::size_t& i, std::vector<char> cs, bool includeLast);
+	std::string StringUntil(const std::string& text, std::size_t& i, const std::string& stopStr);
+
+	std::string StringUntil(const std::string& text, std::size_t& i, std::vector<char> cs, bool includeLast);
+
+	std::string TextUntil(const std::string& text, std::size_t& i, std::vector<char> cs, char& stop);
 
 	/* Iterates through until it finds a character. Returns true if it finds the character, false if it reaches end of text.
 	'i' will be set on that char, does not consume. e.g.: 

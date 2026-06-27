@@ -1,6 +1,6 @@
 #include "pch.h"
 #include <CCRepl/ReplContext.h>
-#include <CCRepl/script.h>
+#include <CCRepl/Script.h>
 #include <util/fmt.h>
 #include <util/ansi.h>
 
@@ -355,6 +355,111 @@ namespace CCRepl {
 		return r;
 	}
 
+	std::string ExpandMacros(const std::string& text) {
+		/*
+		Here we will expand macros:
+		@MACRO which will define a new macro we will replace before tokenization.
+		Define like:
+		@MACRO EXMP_MCRO {
+			// ...
+		}@END(EXMP_MCRO)
+		
+		"@REPEAT" in such a way that it can be used nested, i.e. repeat inside another repeat.
+
+		Current syntax looks like this:
+		@REPEAT [varName](a, b, c) [varName](d, e, f) {
+			// ...
+		}
+
+		Replace it with this:
+		@REPEAT(outer) [varName](a, b, c) [varName](d, e, f) {
+			@REPEAT(middle) [varName](j, k, l) [varName](m, n, o) {
+				@REPEAT(inner) [varName] (u, v, w) [varName](x, y, z) {
+					// ...
+				}@ENDREPEAT(inner)
+			}@ENDREPEAT(middle)
+		}@ENDREPEAT(outer)
+
+		a bit annoying and long. Maybe:
+		@REPEAT(outer) [varName](a, b, c) [varName](d, e, f) {
+			@REPEAT(middle) [varName](j, k, l) [varName](m, n, o) {
+				@REPEAT(inner) [varName] (u, v, w) [varName](x, y, z) {
+					// ...
+				}@END(inner)
+			}@END(middle)
+		}@END(outer)
+
+		We'll do @REPEAT first I guess, then macros.
+		*/
+
+
+		std::string r = text;
+		int iterations = 0;
+		std::unordered_set<char> whiteSpace = { ' ', '\n', '\t', '\r' };
+
+		while (true) {
+			iterations++;
+			std::size_t i = 0;
+			if (iterations > 1000) SCRIPT_ERROR("Expand Macros: Exceeded 1000 iterations");
+			std::ostringstream oss;
+
+			for (; i < r.size(); i++) {
+				char stop;
+				oss << TextUntil(r, i, {'@'}, stop);
+
+				if (stop == '@') {
+					std::string keyWord = TextUntil(r, i, {'(', ' '}, stop);
+					if (keyWord == "@REPEAT") {
+						std::string endStr = "@END" + TextUntil(text, i, {')'}, stop) + ")";
+						std::vector<std::string> varNames;
+						std::map<std::string, std::vector<std::string>> repeatVars;
+
+						bool defineVars = true;
+						for (; i < r.size() && defineVars; i++) {
+							char c = r[i];
+							if (whiteSpace.contains(c)) continue;
+							switch (c) {
+								case ',': continue;
+								case '[': {
+									std::string name = StringUntil(r, i, ']', true);
+									IgnoreUntil(r, i, '(');
+									repeatVars[name] = TokenizeArgs(r, i);
+									varNames.push_back(name);
+									break;
+								}
+								case '{': 
+									defineVars = false;
+									break;
+								case '#':
+									IgnoreUntil(r, i, {'#'});
+									break;
+								case '/':
+									if (i + 1 < r.size() && r[i+1] == '/') IgnoreUntil(r, i, '\n');
+									else throw ScriptException("Expanded: unexpected '/'.");
+								default: throw ScriptException(std::format("Expanded: unexpectred '{}'.", c));
+							}
+						}
+
+						if (i + 1 <= r.size()) throw ScriptException("Missing scope for @REPEAT statement.");
+						i++;
+						std::string scope = StringUntil(r, i, endStr);
+						for (const auto& combo : CartesianProduct(varNames, repeatVars)) {
+							std::string gen = scope;
+							for (const auto& [var, val] : combo)
+								gen = str::ReplaceAll(gen, var, val);
+							oss << gen;
+						}
+					}
+					if (keyWord == "@MACRO") {
+						// not implementing rn.
+					}
+				}
+			}
+			if (oss.str() == r) return r;
+			r = oss.str();
+		}
+	}
+
 	std::string StringUntil(const std::string& text, std::size_t& i, char c, bool includeLast) {
 		std::ostringstream oss;
 		while (i < text.size()) {
@@ -380,6 +485,32 @@ namespace CCRepl {
 		return oss.str(); // Hit end of text
 	}
 
+	// New versions:
+	std::string StringUntil(const std::string& text, std::size_t& i, const std::string& stopStr) {
+		std::ostringstream oss;
+		std::size_t req = stopStr.size();
+		if (i < req) i == req;
+		for (; i < text.size(); i++) {
+			if (text.substr(i-req, req) == stopStr) return oss.str();
+			oss << text[i-req];
+		}
+		SCRIPT_ERROR(std::format("End of script: StopStr '{}' not found.", stopStr));
+	}
+
+	std::string TextUntil(const std::string& text, std::size_t& i, std::vector<char> cs, char& stop) {
+		std::ostringstream oss;
+		while (i < text.size()) {
+			if (str::InVector(text[i], cs)) {
+				stop = text[i];
+				return oss.str();
+			} 
+			oss << text[i++];
+		}
+		stop = '\x03';
+		return oss.str();
+	}
+	
+
 	bool IgnoreUntil(const std::string& text, std::size_t& i, char c) {
 		while (i++ < text.size()) {
 			if (text[i] == c) return true;
@@ -389,7 +520,7 @@ namespace CCRepl {
 
 	char IgnoreUntil(const std::string& text, std::size_t& i, std::vector<char> cs) {
 		while (i++ < text.size()) if (str::InVector(text[i], cs, false)) return text[i];
-		throw std::runtime_error("End of script");
+		return '\x03';
 	}
 
 	std::vector<std::string> TokenizeArgs(const std::string& text, std::size_t& i) {
