@@ -155,7 +155,7 @@ namespace CCRepl::ScriptTools {
                 default:
                     std::size_t startLine = FindLine(exp, i);
                     CommandTokens tokens = TokenizeCmd(exp, i);
-                    r.push_back(ScriptToken{tokens, r.size(), startLine, FindLine(text, i)});
+                    r.push_back(ScriptToken{tokens, r.size(), startLine, FindLine(exp, i)});
                     continue;
             }
         }

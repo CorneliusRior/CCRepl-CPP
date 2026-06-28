@@ -11,11 +11,6 @@
 
 namespace CCRepl::ScriptTools {
 
-    struct ExpandedScript {
-        std::string text;
-        std::vector<std::size_t> sourceLine;
-    };
-
     std::string ParseUpdate(const std::string& text, std::size_t i);
     std::string ExpandMacros(const std::string& text);
     std::vector<ScriptToken> TokenizeScript(const std::string& text);
