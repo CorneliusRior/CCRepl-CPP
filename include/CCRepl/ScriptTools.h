@@ -7,9 +7,14 @@
 // More or less just trying to rewrite all of script because it's annoying.
 
 #define SCRIPT_ERROR(msg) \
-	throw ScriptException(std::format("Script Error (Line #{}, Char {} '{}'): {}", FindLine(text, i), i, text[i], msg))
+	throw ScriptException(std::format("Script Error (Line #{}, Char {} '{}'): {}", FindLine(text, i), i, (i < text.size() ? text[i] : '\0'), msg))
 
 namespace CCRepl::ScriptTools {
+
+    struct ExpandedScript {
+        std::string text;
+        std::vector<std::size_t> sourceLine;
+    };
 
     std::string ParseUpdate(const std::string& text, std::size_t i);
     std::string ExpandMacros(const std::string& text);
