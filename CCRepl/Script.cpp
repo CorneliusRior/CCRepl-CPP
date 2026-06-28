@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <CCRepl/ReplContext.h>
 #include <CCRepl/Script.h>
+#include <CCRepl/ScriptTools.h>
 #include <util/fmt.h>
 #include <util/ansi.h>
 
@@ -164,25 +165,14 @@ namespace CCRepl {
 	}
 
 	Script TextToScript(ReplContext& ctx, const std::string& text) {
-		std::vector<ScriptToken> tokens = TokenizeScript(text);
+		std::vector<ScriptToken> tokens = ScriptTools::TokenizeScript(text);
 		return Script(ctx, tokens);
 	}
 
 	// Implement @Repeat
 
-	std::vector<ScriptToken> TokenizeScript(const std::string& text) {
-		/*
-		Rules:
-		Comments can be formed as either block comments starting & ending with '#', or a line starting with '//', but only outside of statements.
-		Statements start at the first letter of the next one, end end with ';'.
-		New paragraphs or '\n' are allowed everywhere, unless we have some reason to believe that it's in a quote or brackets or something, we ignore it.
-		Otherwise, we follow the general rules of TokenizaParen.
-		Like TokenizeParen, we're not doing UTF-8 stuff, just normal input.
-
-		v1.1: Adding keywords (for now, just @REPEAT).
-		Putting "@" in InterStmt will do keyword. Continue until the next ' ', that has to match a keyword.
-		To Start off, we'll just have "Repeat", case insensitive.
-		*/
+	/* std::vector<ScriptToken> TokenizeScript(const std::string& text) {
+		
 		
 		std::vector<ScriptToken> r;
 		std::size_t scriptLength = text.size();
@@ -225,7 +215,7 @@ namespace CCRepl {
 					case '[': {
 						std::string name = StringUntil(text, i, ']', true);
 						IgnoreUntil(text, i, '(');
-						repeatVars[name] = TokenizeArgs(text, i);
+						repeatVars[name] = ScriptTools::TokenizeArgs(text, i);
 						varNames.push_back(name);
 						break;
 					}
@@ -248,7 +238,7 @@ namespace CCRepl {
 						scopeEnd = i;
 						scope = text.substr(scopeStart, scopeEnd - scopeStart);
 					}
-					else TokenizeCmd(text, i); // Consume a full command: skips over '}' in quotes/braces.
+					else ScriptTools::TokenizeCmd(text, i); // Consume a full command: skips over '}' in quotes/braces.
 					continue;
 				}
 
@@ -291,7 +281,7 @@ namespace CCRepl {
 						SCRIPT_ERROR("(In expanded): ';': Expected statement.");
 					default:
 						std::size_t startLine = FindLine(text, i);
-						CommandTokens tokens = TokenizeCmd(expanded, e);
+						CommandTokens tokens = ScriptTools::TokenizeCmd(expanded, e);
 						r.push_back(ScriptToken{
 							tokens,
 							r.size(),
@@ -329,7 +319,7 @@ namespace CCRepl {
 					SCRIPT_ERROR("';': Expected statement.");
 				default:
 					std::size_t startLine = FindLine(text, i);
-					CommandTokens tokens = TokenizeCmd(text, i);
+					CommandTokens tokens = ScriptTools::TokenizeCmd(text, i);
 					r.push_back(ScriptToken{
 						tokens,
 						r.size(),
@@ -355,112 +345,9 @@ namespace CCRepl {
 		return r;
 	}
 
-	std::string ExpandMacros(const std::string& text) {
-		/*
-		Here we will expand macros:
-		@MACRO which will define a new macro we will replace before tokenization.
-		Define like:
-		@MACRO EXMP_MCRO {
-			// ...
-		}@END(EXMP_MCRO)
-		
-		"@REPEAT" in such a way that it can be used nested, i.e. repeat inside another repeat.
-
-		Current syntax looks like this:
-		@REPEAT [varName](a, b, c) [varName](d, e, f) {
-			// ...
-		}
-
-		Replace it with this:
-		@REPEAT(outer) [varName](a, b, c) [varName](d, e, f) {
-			@REPEAT(middle) [varName](j, k, l) [varName](m, n, o) {
-				@REPEAT(inner) [varName] (u, v, w) [varName](x, y, z) {
-					// ...
-				}@ENDREPEAT(inner)
-			}@ENDREPEAT(middle)
-		}@ENDREPEAT(outer)
-
-		a bit annoying and long. Maybe:
-		@REPEAT(outer) [varName](a, b, c) [varName](d, e, f) {
-			@REPEAT(middle) [varName](j, k, l) [varName](m, n, o) {
-				@REPEAT(inner) [varName] (u, v, w) [varName](x, y, z) {
-					// ...
-				}@END(inner)
-			}@END(middle)
-		}@END(outer)
-
-		We'll do @REPEAT first I guess, then macros.
-		*/
-
-
-		std::string r = text;
-		int iterations = 0;
-		std::unordered_set<char> whiteSpace = { ' ', '\n', '\t', '\r' };
-
-		while (true) {
-			iterations++;
-			std::size_t i = 0;
-			if (iterations > 1000) SCRIPT_ERROR("Expand Macros: Exceeded 1000 iterations");
-			std::ostringstream oss;
-
-			for (; i < r.size(); i++) {
-				char stop;
-				oss << TextUntil(r, i, {'@'}, stop);
-
-				if (stop == '@') {
-					std::string keyWord = TextUntil(r, i, {'(', ' '}, stop);
-					if (keyWord == "@REPEAT") {
-						std::string endStr = "@END" + TextUntil(text, i, {')'}, stop) + ")";
-						std::vector<std::string> varNames;
-						std::map<std::string, std::vector<std::string>> repeatVars;
-
-						bool defineVars = true;
-						for (; i < r.size() && defineVars; i++) {
-							char c = r[i];
-							if (whiteSpace.contains(c)) continue;
-							switch (c) {
-								case ',': continue;
-								case '[': {
-									std::string name = StringUntil(r, i, ']', true);
-									IgnoreUntil(r, i, '(');
-									repeatVars[name] = TokenizeArgs(r, i);
-									varNames.push_back(name);
-									break;
-								}
-								case '{': 
-									defineVars = false;
-									break;
-								case '#':
-									IgnoreUntil(r, i, {'#'});
-									break;
-								case '/':
-									if (i + 1 < r.size() && r[i+1] == '/') IgnoreUntil(r, i, '\n');
-									else throw ScriptException("Expanded: unexpected '/'.");
-								default: throw ScriptException(std::format("Expanded: unexpectred '{}'.", c));
-							}
-						}
-
-						if (i + 1 <= r.size()) throw ScriptException("Missing scope for @REPEAT statement.");
-						i++;
-						std::string scope = StringUntil(r, i, endStr);
-						for (const auto& combo : CartesianProduct(varNames, repeatVars)) {
-							std::string gen = scope;
-							for (const auto& [var, val] : combo)
-								gen = str::ReplaceAll(gen, var, val);
-							oss << gen;
-						}
-					}
-					if (keyWord == "@MACRO") {
-						// not implementing rn.
-					}
-				}
-			}
-			if (oss.str() == r) return r;
-			r = oss.str();
-		}
-	}
-
-	std::string StringUntil(const std::string& text, std::size_t& i, char c, bool includeLast) {
+	
+	
+ 	std::string StringUntil(const std::string& text, std::size_t& i, char c, bool includeLast) {
 		std::ostringstream oss;
 		while (i < text.size()) {
 			if (text[i] == c) {
@@ -489,7 +376,7 @@ namespace CCRepl {
 	std::string StringUntil(const std::string& text, std::size_t& i, const std::string& stopStr) {
 		std::ostringstream oss;
 		std::size_t req = stopStr.size();
-		if (i < req) i == req;
+		if (i < req) i = req;
 		for (; i < text.size(); i++) {
 			if (text.substr(i-req, req) == stopStr) return oss.str();
 			oss << text[i-req];
@@ -523,7 +410,7 @@ namespace CCRepl {
 		return '\x03';
 	}
 
-	std::vector<std::string> TokenizeArgs(const std::string& text, std::size_t& i) {
+	/* std::vector<std::string> TokenizeArgs(const std::string& text, std::size_t& i) {
 		if (++i >= text.size()) SCRIPT_ERROR("End of script, unclosed args.");
 		enum class State {
 			Inter,
@@ -645,9 +532,9 @@ namespace CCRepl {
 		default: break;
 		}
 		SCRIPT_ERROR("End of script, unknown error, ArgumentTokenization.");
-	}
+	} */
 
-	CommandTokens TokenizeCmd(const std::string& text, std::size_t& i) {
+	/* CommandTokens TokenizeCmd(const std::string& text, std::size_t& i) {
 		enum class State {
 			Cmd,
 			Opt
@@ -691,7 +578,7 @@ namespace CCRepl {
 
 				case '(': // Start arguments
 					tokens.commandHead = RmDoubleDot(cmdss.str());
-					tokens.args = TokenizeArgs(text, i);
+					tokens.args = ScriptTools::TokenizeArgs(text, i);
 					st = State::Opt;
 					continue;
 
@@ -731,8 +618,9 @@ namespace CCRepl {
 		}
 		SCRIPT_ERROR("End of script, unknown error (TokenizeCmd).");
 	}
-
-	std::size_t FindLine(const std::string& text, const std::size_t& pos) {
+ 
+	
+ 	std::size_t FindLine(const std::string& text, const std::size_t& pos) {
 		if (pos > text.size()) throw std::runtime_error(std::format("FindLine: Pos exceeds text length. {} >= {}", pos, text.size()));
 		std::size_t line = 1;
 		for (std::size_t i = 0; i < text.size() && i <= pos; i++) {
@@ -757,5 +645,5 @@ namespace CCRepl {
 			r = std::move(next);
 		}
 		return r;
-	}
+	} */
 }

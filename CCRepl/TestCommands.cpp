@@ -3,7 +3,11 @@
 #include <CCRepl/CommandBuilder.h>
 #include <CCRepl/CommandSet.h>
 #include <CCRepl/ReplContext.h>
+#include <CCRepl/Script.h>
+#include <CCRepl/ScriptTools.h>
 #include <util/ObjTbl.h>
+
+#include <filesystem>
 
 namespace CCRepl {
 
@@ -694,6 +698,16 @@ namespace CCRepl {
 
 	}
 
+	CMD_H(ScptExpandMacros) {
+		// Hardcode test somewhat:
+		std::filesystem::path scriptDir = std::filesystem::current_path() / ".." / ".." / ".." / "scripts";
+		std::filesystem::path scriptPath = scriptDir / "ExpandMacrosTest.ccr";
+		std::string raw = str::ReadTextFile(scriptPath);
+		ctx << "Raw:\n\n" << raw << "\n\n-- End of Raw --\n\n";
+		std::string expanded = ScriptTools::ExpandMacros(raw);
+		ctx << "Expanded:\n\n" << expanded << "\n\n-- End of Expanded --\n\n";
+	}
+
 	TestCommands::TestCommands() {
 		Define(
 
@@ -780,7 +794,18 @@ namespace CCRepl {
 				.Args(DatArg("DateTest", ArgMode::Optional)),
 
 				Cmd("ReqInput")
-				.Exec(ReqInput)
+				.Exec(ReqInput),
+
+				Cmd("Script")
+				.Aliases("s", "scpt")
+				.Desc("Some commands for testing new script features")
+				.Children(
+
+					Cmd("ExpandMacros")
+					.Aliases("em", "expmacro")
+					.Exec(ScptExpandMacros)
+
+				)
 
 			)
 

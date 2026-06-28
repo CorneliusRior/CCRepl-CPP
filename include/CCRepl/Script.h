@@ -6,9 +6,6 @@
 #include <CCRepl/Tokenizers.h>
 #include <util/fmt.h>
 
-#define SCRIPT_ERROR(msg) \
-	throw ScriptException(std::format("Script Error (Line #{}, Char {} '{}'): {}", FindLine(text, i), i, text[i], msg))
-
 #define SCP_PRS_UPD(msg) \
 	if (!silent) ctx.WriteLine(std::format("({}/{}): {}", stmt.stmtIndex, Statements.size(), msg))
 
@@ -95,12 +92,11 @@ namespace CCRepl {
 	inline const std::unordered_set<char> WhiteSpace = { ' ', '\n', '\t', '\r' };
 
 	// Create a list of tokens to be converted into a script later:
-	std::vector<ScriptToken> TokenizeScript(const std::string& text);
+	//std::vector<ScriptToken> TokenizeScript(const std::string& text);
 
-	std::vector<ScriptToken> TokenizeScriptV2(const std::string& text);
 
 	// Expands all macors in a script to be tokenized.
-	std::string ExpandMacros(const std::string& text);
+	//std::string ExpandMacros(const std::string& text);
 
 	// Some helpers for script:
 	/* Iterates through until it finds a character, returns everything in between. 
@@ -111,13 +107,13 @@ namespace CCRepl {
 	StringUntil(text, i, ']', true) = "[DEF]";
 	i == 8;
 	*/
-	std::string StringUntil(const std::string& text, std::size_t& i, char c, bool includeLast);
+	//std::string StringUntil(const std::string& text, std::size_t& i, char c, bool includeLast);
 
-	std::string StringUntil(const std::string& text, std::size_t& i, const std::string& stopStr);
+	//std::string StringUntil(const std::string& text, std::size_t& i, const std::string& stopStr);
 
-	std::string StringUntil(const std::string& text, std::size_t& i, std::vector<char> cs, bool includeLast);
+	//std::string StringUntil(const std::string& text, std::size_t& i, std::vector<char> cs, bool includeLast);
 
-	std::string TextUntil(const std::string& text, std::size_t& i, std::vector<char> cs, char& stop);
+	//std::string TextUntil(const std::string& text, std::size_t& i, std::vector<char> cs, char& stop);
 
 	/* Iterates through until it finds a character. Returns true if it finds the character, false if it reaches end of text.
 	'i' will be set on that char, does not consume. e.g.: 
@@ -126,7 +122,7 @@ namespace CCRepl {
 	IgnoreUntil(text, i, '#');
 	i == 10;	
 	*/
-	static bool IgnoreUntil(const std::string& text, std::size_t& i, char c);
+	//static bool IgnoreUntil(const std::string& text, std::size_t& i, char c);
 
 	/* Iterates through until it finds a character in the cs vector. Returns that char if it finds that char, throws if it reaches end of text.
 	'i' will be set to that char, does not consume. e.g.:
@@ -135,18 +131,18 @@ namespace CCRepl {
 	IgnoreUntil(text, i, { '}', '\\' });
 	i == 10;	
 	*/
-	static char IgnoreUntil(const std::string& text, std::size_t& i, std::vector<char> cs);
+	//static char IgnoreUntil(const std::string& text, std::size_t& i, std::vector<char> cs);
 
 	// Maybe this should be in tokenizers instead?:
 	/* For argument parsing section of script parsing. Everything inside of (...) */
-	static std::vector<std::string> TokenizeArgs(const std::string& text, std::size_t& i);
+	//static std::vector<std::string> TokenizeArgs(const std::string& text, std::size_t& i);
 
 	/* Does the whole command, commandhead, args, and options. */
-	static CommandTokens TokenizeCmd(const std::string& text, std::size_t& i);
+	//static CommandTokens TokenizeCmd(const std::string& text, std::size_t& i);
 
 	// Finds what line of the script you're on.
-	static std::size_t FindLine(const std::string& text, const std::size_t& pos);
+	//static std::size_t FindLine(const std::string& text, const std::size_t& pos);
 
 	// Combinations w/catesian product (for repeat)
-	static std::vector<std::map<std::string, std::string>> CartesianProduct(const std::vector<std::string>& varNames, const std::map<std::string, std::vector<std::string>>& repeatVars);
+	//static std::vector<std::map<std::string, std::string>> CartesianProduct(const std::vector<std::string>& varNames, const std::map<std::string, std::vector<std::string>>& repeatVars);
 }

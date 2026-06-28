@@ -12,6 +12,7 @@ add_library(CCRepl STATIC
     ScriptService.cpp
     TestCommands.cpp
     Tokenizers.cpp
+    ScriptTools.cpp
 )
 
 target_include_directories(CCRepl

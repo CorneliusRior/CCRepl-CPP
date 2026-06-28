@@ -146,6 +146,7 @@ namespace str {
 
     // File things:
     std::string ReadTextFile(const std::string& path);
+    std::string ReadTextFile(const std::filesystem::path& path);
 
     void p(std::string text);
     void pol(std::string text);
